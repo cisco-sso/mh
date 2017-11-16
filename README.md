@@ -72,15 +72,15 @@ sudo cp /tmp/multihelm /usr/local/bin
 rm -f /tmp/multihelm
 ```
 
-### Clone the EXAMPLE "***REMOVED***-multihelm" team repo.
+### Clone the EXAMPLE "sopd-multihelm" team repo.
 
 (Or make a new MultiHelm manifests repo for your team.)
 
-https://***REMOVED***/bitbucket/projects/***REMOVED***/repos/***REMOVED***-multihelm
+https://***REMOVED***/bitbucket/projects/***REMOVED***/repos/sopd-multihelm
 
 ```
-git clone ssh://***REMOVED***/***REMOVED***/***REMOVED***-multihelm.git
-cd ***REMOVED***-multihelm
+git clone ssh://***REMOVED***/***REMOVED***/sopd-multihelm.git
+cd sopd-multihelm
 ```
 
 ### Initialize and update git submodules used by this repo.
