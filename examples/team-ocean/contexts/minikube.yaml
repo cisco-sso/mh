@@ -1,8 +1,0 @@
-
-context: minikube
-
-apps:
-  - hello
-  - world
-
-imagePullPolicy: IfNotPresent

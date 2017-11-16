@@ -1,0 +1,14 @@
+
+targetContext: minikube
+
+appsPath: ./apps
+
+team: sre
+
+maintainers:
+  - josdotso@cisco.com
+
+apps:
+  - world
+
+imagePullPolicy: Always

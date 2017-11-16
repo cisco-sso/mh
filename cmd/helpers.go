@@ -16,7 +16,9 @@ package cmd
 
 import (
 	"io/ioutil"
+	"strings"
 
+	"github.com/codeskyblue/go-sh"
 	"github.com/smallfish/simpleyaml"
 	"github.com/spf13/viper"
 	"k8s.io/helm/pkg/chartutil"
@@ -26,8 +28,37 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func render(app string) (string, []byte, error) {
+func getCurrentContext() string {
+	cmd := []interface{}{
+		"config",
+		"current-context",
+	}
 
+	out, err := sh.Command("kubectl", cmd...).Output()
+	if err != nil {
+		log.Fatal("Failed running `kubectl config current-context`.")
+	}
+
+	return strings.TrimSuffix(string(out), "\n")
+}
+
+func logInit(cmd string) {
+	log.WithFields(log.Fields{
+		"appsPath":       viper.GetString("appsPath"),
+		"cfgFile":        viper.ConfigFileUsed(),
+		"currentContext": currentContext,
+		"targetContext":  viper.GetString("targetContext"),
+		"versionNumber":  versionNumber,
+	}).Info("Initializing MultiHelm.")
+
+	if cmd != "version" {
+		log.Infof("`%s` called.", cmd)
+	}
+
+	return
+}
+
+func render(app string) (string, []byte, error) {
 	log.WithFields(log.Fields{
 		"app": app,
 	}).Info("Rendering app.")
@@ -40,7 +71,7 @@ func render(app string) (string, []byte, error) {
 		}).Fatal("Failed to load values while rendering app file.")
 	}
 
-	appFile := appsPath + "/" + app + ".yaml"
+	appFile := viper.GetString("appsPath") + "/" + app + ".yaml"
 
 	data, err := ioutil.ReadFile(appFile)
 	if err != nil {

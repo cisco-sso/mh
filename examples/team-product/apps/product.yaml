@@ -1,5 +1,5 @@
 
-chart: ./src/world
+chart: ./src/product
 
 image:
   pullPolicy: {{ .imagePullPolicy }}

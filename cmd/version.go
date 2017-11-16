@@ -15,43 +15,21 @@
 package cmd
 
 import (
-	"github.com/codeskyblue/go-sh"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	log "github.com/sirupsen/logrus"
 )
 
-// statusCmd represents the status command
-var statusCmd = &cobra.Command{
-	Use:   "status [APP]...",
-	Short: "Get status of apps",
-	Long: `Get status one or more MultiHelm apps. If you do not specify one or more
-apps, MultiHelm acts on all apps in your MultiHelm config.`,
+// versionCmd represents the version command
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print version information.",
+	Long:  `Print version information.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logInit("status")
-		if len(args) > 0 {
-			for _, arg := range args {
-				status(arg)
-			}
-		} else {
-			for _, arg := range viper.GetStringSlice("apps") {
-				status(arg)
-			}
-		}
+		log.Info("MultiHelm " + versionNumber)
 	},
 }
 
 func init() {
-	RootCmd.AddCommand(statusCmd)
-}
-
-func status(app string) {
-	err := sh.Command("helm", "status", app).Run()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"app": app,
-			"err": err,
-		}).Fatal("Failed to get status for app.")
-	}
+	RootCmd.AddCommand(versionCmd)
 }

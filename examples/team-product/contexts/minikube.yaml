@@ -1,0 +1,15 @@
+
+targetContext: minikube
+
+appsPath: ./apps
+
+maintainers:
+  - josdotso@cisco.com
+
+team: product
+
+apps:
+  - hello
+  - product
+
+imagePullPolicy: Always

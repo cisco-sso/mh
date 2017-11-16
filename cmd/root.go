@@ -15,9 +15,6 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -25,8 +22,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var appsPath string
 var cfgFile string
+var currentContext string
+var versionNumber string
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -41,18 +39,28 @@ MultiHelm YAML config files.`,
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Fatal("Failed to execute RootCmd.")
 	}
 }
 
 func init() {
+	versionNumber = "v0.1.0"
+	currentContext = getCurrentContext()
+
 	cobra.OnInitialize(initConfig)
 
-	viper.SetDefault("appsPath", "./apps")
-
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", `config file (default "${HOME}/.multihelm.yaml")`)
-	RootCmd.PersistentFlags().StringVar(&appsPath, "appsPath", viper.GetString("appsPath"), "apps path")
+	RootCmd.PersistentFlags().StringP("appsPath", "", "./apps", "apps path")
+	RootCmd.PersistentFlags().BoolP("printRendered", "p", false, "print rendered override values")
+	RootCmd.PersistentFlags().StringP("targetContext", "", "minikube", "target kubectl context")
+
+	// Beware that init() happens too early to read values from Viper...
+	// See: https://github.com/spf13/cobra/issues/511
+	//
+	// TL;DR -- Use Viper for retrieving values, but read values no earlier than at "Run:" time.
+	viper.BindPFlags(RootCmd.PersistentFlags())
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -64,8 +72,9 @@ func initConfig() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			log.WithFields(log.Fields{
+				"err": err,
+			}).Fatal("Failed to lookup home directory.")
 		}
 
 		// Search config in home directory with name ".multihelm" (without extension).
@@ -76,7 +85,11 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		log.Infoln("Using config file:", viper.ConfigFileUsed())
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Fatal("Failed to load MultiHelm config.")
+
 	}
 }
