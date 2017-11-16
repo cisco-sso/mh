@@ -1,5 +1,5 @@
 
-# SOPD SRE MultiHelm
+# MultiHelm
 
 ```
 $ multihelm --help
