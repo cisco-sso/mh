@@ -15,11 +15,11 @@
 package cmd
 
 import (
-	"fmt"
-	//"github.com/codeskyblue/go-sh"
+	"github.com/codeskyblue/go-sh"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // simulateCmd represents the simulate command
@@ -57,25 +57,33 @@ func init() {
 
 func simulate(app string) {
 
-	renderedValues, err := render(app)
+	chart, overrideValues, err := render(app)
 	if err != nil {
-		os.Exit(1)
+		log.WithFields(log.Fields{
+			"app": app,
+		}).Fatal("Render function failed for app.")
 	}
 
-	fmt.Println(renderedValues)
-	/*
-		// Render override file
-		cfgFile := viper.ConfigFileUsed()
+	//fmt.Println(overrideValues)
 
-		appsPath := "./apps"
-		chartPath := "./src"
-		cmd := []interface{}{
-			"upgrade", "--install", "--force", "--recreate-pods",
-			"--debug", "--dry-run", "--force", app, chartPath,
-		}
-		err := sh.Command("helm", cmd...).Run()
-		if err != nil {
-			os.Exit(1)
-		}
-	*/
+	cmd := []interface{}{
+		"upgrade", app, chart,
+		"--debug",
+		"--dry-run",
+		"--force",
+		"--force",
+		"--install",
+		"--recreate-pods",
+		"--values", "-",
+	}
+
+	//err := sh.Command("helm", cmd...).Run()
+	err = sh.Command("helm", cmd...).SetInput(string(overrideValues)).Run()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"app":   app,
+			"chart": chart,
+		}).Fatal("Failed running `helm upgrade` for app.")
+
+	}
 }

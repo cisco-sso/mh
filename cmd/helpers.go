@@ -17,6 +17,7 @@ package cmd
 import (
 	"io/ioutil"
 
+	"github.com/smallfish/simpleyaml"
 	"github.com/spf13/viper"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/engine"
@@ -25,7 +26,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func render(app string) (string, error) {
+func render(app string) (string, []byte, error) {
 
 	log.WithFields(log.Fields{
 		"app": app,
@@ -44,7 +45,8 @@ func render(app string) (string, error) {
 	data, err := ioutil.ReadFile(appFile)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"app": app,
+			"app":     app,
+			"appFile": appFile,
 		}).Fatal("Failed to load app template while rendering app file.")
 	}
 
@@ -65,5 +67,23 @@ func render(app string) (string, error) {
 		}).Fatal("Failed to render app file.")
 	}
 
-	return out["fake/templates/main"], nil
+	overrideValues := []byte(out["fake/templates/main"])
+
+	yml, err := simpleyaml.NewYaml(overrideValues)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"app": app,
+			"err": err,
+		}).Fatal("Loading of override YAML failed for app.")
+	}
+
+	chart, err := yml.Get("chart").String()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"app": app,
+			"err": err,
+		}).Fatal("Lookup of chart in override YAML failed for app.")
+	}
+
+	return chart, overrideValues, nil
 }
