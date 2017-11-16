@@ -15,48 +15,67 @@
 package cmd
 
 import (
-	"github.com/codeskyblue/go-sh"
+	"fmt"
+	//"github.com/codeskyblue/go-sh"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"os"
 )
 
-// statusCmd represents the status command
-var statusCmd = &cobra.Command{
-	Use:   "status [APP]...",
-	Short: "Get status of apps",
-	Long: `Get status one or more MultiHelm apps. If you do not specify one or more
+// simulateCmd represents the simulate command
+var simulateCmd = &cobra.Command{
+	Use:   "simulate",
+	Short: "Simulate apps",
+	Long: `Simulate the apply of one or more MultiHelm apps. If you do not specify one or more
 apps, MultiHelm acts on all apps in your MultiHelm config.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) > 0 {
 			for _, arg := range args {
-				status(arg)
+				simulate(arg)
 			}
 		} else {
 			for _, arg := range viper.GetStringSlice("apps") {
-				status(arg)
+				simulate(arg)
 			}
 		}
 	},
 }
 
 func init() {
-	RootCmd.AddCommand(statusCmd)
+	RootCmd.AddCommand(simulateCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// statusCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// simulateCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// statusCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// simulateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func status(app string) {
-	err := sh.Command("helm", "status", app).Run()
+func simulate(app string) {
+
+	renderedValues, err := render(app)
 	if err != nil {
 		os.Exit(1)
 	}
+
+	fmt.Println(renderedValues)
+	/*
+		// Render override file
+		cfgFile := viper.ConfigFileUsed()
+
+		appsPath := "./apps"
+		chartPath := "./src"
+		cmd := []interface{}{
+			"upgrade", "--install", "--force", "--recreate-pods",
+			"--debug", "--dry-run", "--force", app, chartPath,
+		}
+		err := sh.Command("helm", cmd...).Run()
+		if err != nil {
+			os.Exit(1)
+		}
+	*/
 }
