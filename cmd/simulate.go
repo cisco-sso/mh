@@ -69,7 +69,6 @@ func simulate(app string) {
 		"--debug",
 		"--dry-run",
 		"--force",
-		"--force",
 		"--install",
 		"--recreate-pods",
 		"--values", "-",

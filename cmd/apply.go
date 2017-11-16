@@ -17,29 +17,67 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/codeskyblue/go-sh"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // applyCmd represents the apply command
 var applyCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "Apply apps",
-	Long:  `Apply configures one or more MultiHelm apps.`,
+	Long: `Apply the apply of one or more MultiHelm apps. If you do not specify one or more
+apps, MultiHelm acts on all apps in your MultiHelm config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("apply called")
+		logInit("apply")
+		if len(args) > 0 {
+			for _, arg := range args {
+				apply(arg)
+			}
+		} else {
+			for _, arg := range viper.GetStringSlice("apps") {
+				apply(arg)
+			}
+		}
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(applyCmd)
 
-	// Here you will define your flags and configuration settings.
+	applyCmd.PersistentFlags().BoolP("printRendered", "p", false, "print rendered override values")
+	viper.BindPFlags(applyCmd.PersistentFlags())
+}
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// applyCmd.PersistentFlags().String("foo", "", "A help for foo")
+func apply(app string) {
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// applyCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	chart, overrideValues, err := render(app)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"app": app,
+		}).Fatal("Render function failed for app.")
+	}
+
+	if viper.GetBool("printRendered") {
+		fmt.Println(overrideValues)
+	}
+
+	cmd := []interface{}{
+		"upgrade", app, chart,
+		"--force",
+		"--install",
+		"--recreate-pods",
+		"--values", "-",
+	}
+
+	//err := sh.Command("helm", cmd...).Run()
+	err = sh.Command("helm", cmd...).SetInput(string(overrideValues)).Run()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"app":   app,
+			"chart": chart,
+		}).Fatal("Failed running `helm upgrade` for app.")
+	}
 }

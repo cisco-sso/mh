@@ -30,9 +30,20 @@ var versionNumber string
 var RootCmd = &cobra.Command{
 	Use:   "multihelm",
 	Short: "Operate multiple Helm charts",
-	Long: `MultiHelm simplifies multi-chart workflows by rendering ephemeral Helm
-chart override files based on templates populated with values from
-MultiHelm YAML config files.`,
+	Long: `                   ___    __        __              ___
+                  /\_ \  /\ \__  __/\ \            /\_ \
+  ___ ___   __  __\//\ \ \ \ ._\/\_\ \ \___      __\//\ \     ___ ___
+/. __. __.\/\ \/\ \ \ \ \ \ \ \/\/\ \ \  _  \  / __ \\ \ \  /  __. __.\
+/\ \/\ \/\ \ \ \_\ \ \_\ \_\ \ \_\ \ \ \ \ \ \/\  __/ \_\ \_/\ \/\ \/\ \
+\ \_\ \_\ \_\ \____/ /\____\\ \__\\ \_\ \_\ \_\ \____\/\____\ \_\ \_\ \_\
+ \/_/\/_/\/_/\/___/  \/____/ \/__/ \/_/\/_/\/_/\/____/\/____/\/_/\/_/\/_/
+
+MultiHelm simplifies multi-chart Helm workflows by rendering ephemeral Helm
+chart override files based on templates populated with values from MultiHelm
+YAML config files.
+
+In other words: We heard you like templates, so we templated your Helm value
+overrides.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -51,9 +62,8 @@ func init() {
 
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", `config file (default "${HOME}/.multihelm.yaml")`)
-	RootCmd.PersistentFlags().StringP("appsPath", "", "./apps", "apps path")
-	RootCmd.PersistentFlags().StringP("targetContext", "", "minikube", "target kubectl context")
+	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", `config file (default "${HOME}/.multihelm.yaml")`)
+	RootCmd.PersistentFlags().StringP("appsPath", "a", "./apps", "apps path")
 
 	// Beware that init() happens too early to read values from Viper...
 	// See: https://github.com/spf13/cobra/issues/511
