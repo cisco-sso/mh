@@ -30,7 +30,7 @@ func render(app string) (string, []byte, error) {
 
 	log.WithFields(log.Fields{
 		"app": app,
-	}).Info("Rendering a new app.")
+	}).Info("Rendering app.")
 
 	configFile := viper.ConfigFileUsed()
 	config, err := chartutil.ReadValuesFile(configFile)
@@ -40,7 +40,7 @@ func render(app string) (string, []byte, error) {
 		}).Fatal("Failed to load values while rendering app file.")
 	}
 
-	appFile := appsPath + "/" + app + ".yaml.tpl"
+	appFile := appsPath + "/" + app + ".yaml"
 
 	data, err := ioutil.ReadFile(appFile)
 	if err != nil {
