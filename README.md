@@ -76,6 +76,8 @@ rm -f /tmp/multihelm
 
 (Or make a new MultiHelm manifests repo for your team.)
 
+https://***REMOVED***/bitbucket/projects/***REMOVED***/repos/***REMOVED***-multihelm
+
 ```
 git clone ssh://***REMOVED***/***REMOVED***/***REMOVED***-multihelm.git
 cd ***REMOVED***-multihelm
