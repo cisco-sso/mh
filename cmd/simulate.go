@@ -74,12 +74,11 @@ func simulate(app string) {
 		"--values", "-",
 	}
 
-	//err := sh.Command("helm", cmd...).Run()
 	err = sh.Command("helm", cmd...).SetInput(string(overrideValues)).Run()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"app":   app,
 			"chart": chart,
-		}).Fatal("Failed running `helm upgrade` for app.")
+		}).Fatal("Failed running (simulated) `helm upgrade` for app.")
 	}
 }

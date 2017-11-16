@@ -28,7 +28,7 @@ import (
 var applyCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "Apply apps",
-	Long: `Apply the apply of one or more MultiHelm apps. If you do not specify one or more
+	Long: `Apply one or more MultiHelm apps. If you do not specify one or more
 apps, MultiHelm acts on all apps in your MultiHelm config.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logInit("apply")
@@ -72,7 +72,6 @@ func apply(app string) {
 		"--values", "-",
 	}
 
-	//err := sh.Command("helm", cmd...).Run()
 	err = sh.Command("helm", cmd...).SetInput(string(overrideValues)).Run()
 	if err != nil {
 		log.WithFields(log.Fields{

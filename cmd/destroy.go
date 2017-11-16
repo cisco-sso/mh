@@ -15,31 +15,47 @@
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/codeskyblue/go-sh"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // destroyCmd represents the destroy command
 var destroyCmd = &cobra.Command{
 	Use:   "destroy",
 	Short: "Destroy apps",
-	Long:  `Destroy deletes one or more MultiHelm apps.`,
+	Long: `Destroy one or more MultiHelm apps. If you do not specify one or more
+apps, MultiHelm acts on all apps in your MultiHelm config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("destroy called")
+		logInit("destroy")
+		if len(args) > 0 {
+			for _, arg := range args {
+				destroy(arg)
+			}
+		} else {
+			for _, arg := range viper.GetStringSlice("apps") {
+				destroy(arg)
+			}
+		}
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(destroyCmd)
+}
 
-	// Here you will define your flags and configuration settings.
+func destroy(app string) {
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// destroyCmd.PersistentFlags().String("foo", "", "A help for foo")
+	cmd := []interface{}{
+		"destroy", app,
+	}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// destroyCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	err := sh.Command("helm", cmd...).Run()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"app": app,
+		}).Fatal("Failed running `helm destroy` for app.")
+	}
 }
