@@ -53,7 +53,6 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", `config file (default "${HOME}/.multihelm.yaml")`)
 	RootCmd.PersistentFlags().StringP("appsPath", "", "./apps", "apps path")
-	RootCmd.PersistentFlags().BoolP("printRendered", "p", false, "print rendered override values")
 	RootCmd.PersistentFlags().StringP("targetContext", "", "minikube", "target kubectl context")
 
 	// Beware that init() happens too early to read values from Viper...

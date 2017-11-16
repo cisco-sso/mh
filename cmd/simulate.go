@@ -15,6 +15,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/codeskyblue/go-sh"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -44,6 +46,9 @@ apps, MultiHelm acts on all apps in your MultiHelm config.`,
 
 func init() {
 	RootCmd.AddCommand(simulateCmd)
+
+	simulateCmd.PersistentFlags().BoolP("printRendered", "p", false, "print rendered override values")
+	viper.BindPFlags(simulateCmd.PersistentFlags())
 }
 
 func simulate(app string) {
@@ -55,7 +60,9 @@ func simulate(app string) {
 		}).Fatal("Render function failed for app.")
 	}
 
-	//fmt.Println(overrideValues)
+	if viper.GetBool("printRendered") {
+		fmt.Println(overrideValues)
+	}
 
 	cmd := []interface{}{
 		"upgrade", app, chart,
