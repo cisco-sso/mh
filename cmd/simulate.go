@@ -61,7 +61,15 @@ func simulate(app string) {
 	}
 
 	if viper.GetBool("printRendered") {
-		fmt.Println(overrideValues)
+		log.WithFields(log.Fields{
+			"app":   app,
+			"chart": chart,
+		}).Info("Printing rendered override values for app.")
+		fmt.Print(string(overrideValues))
+		log.WithFields(log.Fields{
+			"app":   app,
+			"chart": chart,
+		}).Info("Done printing rendered override values for app.")
 	}
 
 	cmd := []interface{}{

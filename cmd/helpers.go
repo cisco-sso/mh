@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/codeskyblue/go-sh"
@@ -27,6 +28,34 @@ import (
 
 	log "github.com/sirupsen/logrus"
 )
+
+func buildDependencies(app string, chart string) {
+	// If requirements.yaml exists at chart, build dependencies for it,
+	// in the chart's own directory.
+	if _, err := os.Stat(chart + "/" + "requirements.yaml"); !os.IsNotExist(err) {
+		log.WithFields(log.Fields{
+			"app":   app,
+			"chart": chart,
+			"err":   err,
+		}).Info("Building chart dependencies for app.")
+		// We start a new shell session here so
+		// that we needn't tangle with `cd`.
+		session := sh.NewSession()
+		session.SetDir(chart)
+		out, err := session.Command(
+			"helm", "dependency", "build",
+		).Output()
+		if err != nil {
+			log.WithFields(log.Fields{
+				"app":   app,
+				"chart": chart,
+				"err":   err,
+				"out":   out,
+			}).Fatal("Failed to build chart dependencies for app.")
+		}
+		session.ShowCMD = true
+	}
+}
 
 func getCurrentContext() string {
 	cmd := []interface{}{
@@ -115,6 +144,8 @@ func render(app string) (string, []byte, error) {
 			"err": err,
 		}).Fatal("Lookup of chart in override YAML failed for app.")
 	}
+
+	buildDependencies(app, chart)
 
 	return chart, overrideValues, nil
 }

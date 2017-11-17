@@ -56,12 +56,21 @@ func apply(app string) {
 	chart, overrideValues, err := render(app)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"app": app,
+			"app":   app,
+			"chart": chart,
 		}).Fatal("Render function failed for app.")
 	}
 
 	if viper.GetBool("printRendered") {
-		fmt.Println(overrideValues)
+		log.WithFields(log.Fields{
+			"app":   app,
+			"chart": chart,
+		}).Info("Printing rendered override values for app.")
+		fmt.Print(string(overrideValues))
+		log.WithFields(log.Fields{
+			"app":   app,
+			"chart": chart,
+		}).Info("Done printing rendered override values for app.")
 	}
 
 	cmd := []interface{}{
