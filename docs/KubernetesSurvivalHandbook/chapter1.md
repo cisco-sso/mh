@@ -1,5 +1,7 @@
 
-# Kubernetes Survival Handbook -- Chapter 1: MultiHelm at Minikube
+# Kubernetes Survival Handbook
+
+**Chapter 1: MultiHelm at Minikube**
 
 Contact: <josdotso@cisco.com>
 

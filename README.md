@@ -59,7 +59,7 @@ $ multihelm license
 
 This guide to Kubernetes lives in the `docs` folder of this repo.
 
-Chapter 1, which is entitled "", starts [here](https://***REMOVED***/browse/docs/KubernetesSurvivalHandbook/chapter1.md).
+Chapter 1, entitled "MultiHelm at Minikube", starts [here](https://***REMOVED***/browse/docs/KubernetesSurvivalHandbook/chapter1.md).
 
 
 ## Getting Started
