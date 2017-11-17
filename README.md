@@ -78,15 +78,15 @@ sudo cp /tmp/multihelm /usr/local/bin
 rm -f /tmp/multihelm
 ```
 
-### Clone the EXAMPLE "sopd-multihelm" team repo.
+### Clone the example "hello-multihelm" repo.
 
 (Or make a new MultiHelm manifests repo for your team.)
 
-https://***REMOVED***/bitbucket/projects/***REMOVED***/repos/sopd-multihelm
+https://***REMOVED***/bitbucket/projects/***REMOVED***/repos/hello-multihelm
 
 ```
-git clone ssh://***REMOVED***/***REMOVED***/sopd-multihelm.git
-cd sopd-multihelm
+git clone ssh://***REMOVED***/***REMOVED***/hello-multihelm.git
+cd hello-multihelm
 ```
 
 ### Initialize and update git submodules used by this repo.
@@ -114,7 +114,7 @@ kubectl config use-context minikube
 ended so that multple teams can more easily work together on one cluster.)
 
 ```
-export MULTIHELM_CONFIG="$(pwd)/contexts/minikube.yaml"
+export MULTIHELM_CONFIG="$(pwd)/configs/minikube.yaml"
 ```
 
 ### Get status of everything at context "minkube" managed by this MultiHelm config.
@@ -125,8 +125,8 @@ export MULTIHELM_CONFIG="$(pwd)/contexts/minikube.yaml"
 multihelm status
 # ^ get status for all apps in `minikube.yaml`
 
-multihelm status dashboard nginx-ingress
-# ^ get status for just these two apps
+multihelm status wordpress
+# ^ get status for just these app(s)
 ```
 
 ### Simulate app upgrades (or simulate install of apps, as needed).
@@ -142,8 +142,8 @@ multihelm simulate --printRendered
 # ^ simulate install/upgrade for all apps in `minikube.yaml`
 #   (verbosely printing app template renderings)
 
-multihelm simulate dashboard nginx-ingress
-# ^ simulate install/upgrade just these two apps,
+multihelm simulate wordpress
+# ^ simulate install/upgrade just these app(s),
 #   even if they are not in `minikube.yaml`
 ```
 
@@ -159,8 +159,8 @@ multihelm apply --printRendered
 # ^ apply install/upgrade for all apps in `minikube.yaml`
 #   (verbosely printing app template renderings)
 
-multihelm apply dashboard nginx-ingress
-# ^ apply install/upgrade just these two apps,
+multihelm apply wordpress
+# ^ apply install/upgrade just these app(s),
 #   even if they are not in `minikube.yaml`
 ```
 
@@ -172,7 +172,7 @@ multihelm apply dashboard nginx-ingress
 multihelm destroy
 # ^ destroy all apps in `minikube.yaml`
 
-multihelm destroy dashboard nginx-ingress
-# ^ destroy just these two apps,
+multihelm destroy wordpress
+# ^ destroy just these app(s),
 #   even if they are not in `minikube.yaml`
 ```
