@@ -20,13 +20,16 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	homedir "github.com/mitchellh/go-homedir"
 	log "github.com/sirupsen/logrus"
 )
 
-var cfgFile string
-var currentContext string
-var versionNumber string
+var (
+	cfgFile          string
+	cfgFileSetMethod string
+	currentContext   string
+	tryCfgFile       string
+	versionNumber    string
+)
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -59,12 +62,12 @@ func Execute() {
 }
 
 func init() {
-	versionNumber = "v0.1.0"
+	versionNumber = "v0.1.1"
 	currentContext = getCurrentContext()
 
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", `config file (default "${HOME}/.multihelm.yaml")`)
+	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", `config file (you can instead set MULTIHELM_CONFIG)`)
 	RootCmd.PersistentFlags().StringP("appsPath", "a", "./apps", "apps path")
 
 	// Beware that init() happens too early to read values from Viper...
@@ -79,25 +82,15 @@ func initConfig() {
 	// If env var is set, update cfgFile
 	envCfgFile, present := os.LookupEnv("MULTIHELM_CONFIG")
 	if present {
-		cfgFile = envCfgFile
+		tryCfgFile = envCfgFile
+		cfgFileSetMethod = "env"
 	}
 	if cfgFile != "" {
 		// Override config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			log.WithFields(log.Fields{
-				"err": err,
-			}).Fatal("Failed to lookup home directory.")
-		}
-
-		// Search config in home directory with name ".multihelm" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".multihelm")
+		tryCfgFile = cfgFile
+		cfgFileSetMethod = "flag"
 	}
-
+	viper.SetConfigFile(tryCfgFile)
 	viper.SetEnvPrefix("multihelm") // will be uppercased automatically
 	viper.AutomaticEnv()            // read in environment variables that match
 
@@ -105,8 +98,11 @@ func initConfig() {
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.WithFields(log.Fields{
-			"err": err,
-		}).Fatal("Failed to load MultiHelm config.")
+			"err":              err,
+			"tryCfgFile":       tryCfgFile,
+			"cfgFileSetMethod": cfgFileSetMethod,
+		}).Fatalln("Failed to load MultiHelm config.",
+			"Please consider exporting env var MULTIHELM_CONFIG.")
 
 	}
 }
