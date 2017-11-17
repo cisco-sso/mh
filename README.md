@@ -32,7 +32,7 @@ Available Commands:
 
 Flags:
   -a, --appsPath string   apps path (default "./apps")
-  -c, --config string     config file (default "${HOME}/.multihelm.yaml")
+  -c, --config string     config file (you can instead set MULTIHELM_CONFIG)
   -h, --help              help for multihelm
 
 Use "multihelm [command] --help" for more information about a command.
