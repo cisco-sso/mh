@@ -55,6 +55,12 @@ $ multihelm license
 // limitations under the License.
 ```
 
+## Kubernetes Survival Handbook
+
+This guide to Kubernetes lives in the `docs` folder of this repo.
+
+Chapter 1, which is entitled "", starts [here](https://***REMOVED***/browse/docs/KubernetesSurvivalHandbook/chapter1.md).
+
 
 ## Getting Started
 
