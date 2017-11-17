@@ -49,7 +49,7 @@ func init() {
 func destroy(app string) {
 
 	cmd := []interface{}{
-		"destroy", app,
+		"delete", app,
 	}
 
 	err := sh.Command("helm", cmd...).Run()
