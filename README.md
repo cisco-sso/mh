@@ -71,8 +71,10 @@ Chapter 1, entitled "MultiHelm at Minikube", starts [here](https://***REMOVED***
 (Simplified install coming soon!)
 
 ```
+go get -u github.com/golang/dep/cmd/dep   # https://github.com/golang/dep
 git clone ssh://***REMOVED***/***REMOVED***/multihelm.git
 cd multihelm
+dep ensure
 go build main.go -o /tmp/multihelm
 sudo cp /tmp/multihelm /usr/local/bin
 rm -f /tmp/multihelm
