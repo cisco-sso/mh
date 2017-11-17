@@ -71,12 +71,22 @@ func getCurrentContext() string {
 	return strings.TrimSuffix(string(out), "\n")
 }
 
-func logInit(cmd string) {
+func lateInit(cmd string) {
+	targetContext := viper.GetString("targetContext")
+
+	if targetContext != currentContext {
+		log.WithFields(log.Fields{
+			"tryCfgFile":     viper.ConfigFileUsed(),
+			"currentContext": currentContext,
+			"targetContext":  targetContext,
+		}).Fatal("`kubectl config current-context` does not match config's `targetContext`.")
+	}
+
 	log.WithFields(log.Fields{
 		"appsPath":       viper.GetString("appsPath"),
-		"cfgFile":        viper.ConfigFileUsed(),
+		"tryCfgFile":     viper.ConfigFileUsed(),
 		"currentContext": currentContext,
-		"targetContext":  viper.GetString("targetContext"),
+		"targetContext":  targetContext,
 		"versionNumber":  versionNumber,
 	}).Info("Initializing MultiHelm.")
 

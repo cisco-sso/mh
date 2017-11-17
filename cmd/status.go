@@ -29,7 +29,7 @@ var statusCmd = &cobra.Command{
 	Long: `Get status one or more MultiHelm apps. If you do not specify one or more
 apps, MultiHelm acts on all apps in your MultiHelm config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logInit("status")
+		lateInit("status")
 		if len(args) > 0 {
 			for _, arg := range args {
 				status(arg)

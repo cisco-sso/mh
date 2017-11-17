@@ -29,7 +29,7 @@ var destroyCmd = &cobra.Command{
 	Long: `Destroy one or more MultiHelm apps. If you do not specify one or more
 apps, MultiHelm acts on all apps in your MultiHelm config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logInit("destroy")
+		lateInit("destroy")
 		if len(args) > 0 {
 			for _, arg := range args {
 				destroy(arg)
