@@ -134,6 +134,7 @@ func render(app string) (string, []byte, error) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"app": app,
+			"err": err,
 		}).Fatal("Failed to render app file.")
 	}
 
