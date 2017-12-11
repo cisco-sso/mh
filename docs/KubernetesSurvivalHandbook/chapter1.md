@@ -83,7 +83,6 @@ git init
 echo "# Hello MultiHelm" > README.md
 mkdir -p apps configs src
 touch apps/.gitkeep configs/.gitkeep src/.gitkeep
-echo "charts/" > .gitignore
 git add .
 git commit -a -m "First commit"
 ```
@@ -100,7 +99,7 @@ you to use two different forks of the same repo at the same time. It also
 helps to reduce confusion and submodule name collisions.
 
 ```
-git submodule add -b master git@github.com:kubernetes/charts.git src/github.com/kubernetes/charts
+git submodule add -b master ssh://git@github.com:kubernetes/charts.git src/github.com/kubernetes/charts
 git add .
 git commit -a -m "Add submodule 'src/github.com/kubernetes/charts'"
 ```
