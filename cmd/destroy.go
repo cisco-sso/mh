@@ -44,12 +44,22 @@ apps, MultiHelm acts on all apps in your MultiHelm config.`,
 
 func init() {
 	RootCmd.AddCommand(destroyCmd)
+
+	destroyCmd.PersistentFlags().BoolP("purge", "p", false, "purge this app from Helm Tiller")
+	viper.BindPFlags(destroyCmd.PersistentFlags())
 }
 
 func destroy(app string) {
+	var cmd []interface{}
 
-	cmd := []interface{}{
-		"delete", app,
+	if viper.GetBool("purge") {
+		cmd = []interface{}{
+			"delete", "--purge", app,
+		}
+	} else {
+		cmd = []interface{}{
+			"delete", app,
+		}
 	}
 
 	err := sh.Command("helm", cmd...).Run()
