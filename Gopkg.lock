@@ -158,6 +158,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  name = "github.com/stoewer/go-strcase"
+  packages = ["."]
+  revision = "c8136b55823dc6af966d084a06056c5575f6400f"
+  version = "v1.0.1"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["pbkdf2","scrypt","ssh/terminal"]
@@ -196,6 +202,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "50a69f3b0edd52a92216f7a679eb6a77c272e69fa52d0f32e366986ebcb98816"
+  inputs-digest = "f605813f1576264c7f9bdcbd2f54b475f0293a6c17189cec533676861c5b74c3"
   solver-name = "gps-cdcl"
   solver-version = 1

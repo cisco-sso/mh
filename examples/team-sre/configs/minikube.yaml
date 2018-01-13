@@ -9,6 +9,12 @@ maintainers:
   - josdotso@cisco.com
 
 apps:
-  - world
+  - name: hello
+    alias: hello-morning
+    key: helloMorning
+  - name: world
 
 imagePullPolicy: Always
+
+helloMorning:
+  customValue: 42
