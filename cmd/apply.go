@@ -1,4 +1,4 @@
-// Copyright © 2017 Cisco Systems, Inc.
+// Copyright © 2018 Cisco Systems, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,13 +15,8 @@
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/codeskyblue/go-sh"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // applyCmd represents the apply command
@@ -32,15 +27,14 @@ var applyCmd = &cobra.Command{
 apps, MultiHelm acts on all apps in your MultiHelm config.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		lateInit("apply")
-		if len(args) > 0 {
-			for _, arg := range args {
-				apply(arg)
-			}
-		} else {
-			for _, arg := range viper.GetStringSlice("apps") {
-				apply(arg)
-			}
-		}
+
+		apps := getApps(args)
+
+		configFile := getConfigFile()
+		appsPath := getAppsPath()
+		printRendered := getPrintRendered()
+
+		apps.Apply(configFile, appsPath, printRendered)
 	},
 }
 
@@ -49,43 +43,4 @@ func init() {
 
 	applyCmd.PersistentFlags().BoolP("printRendered", "p", false, "print rendered override values")
 	viper.BindPFlags(applyCmd.PersistentFlags())
-}
-
-func apply(app string) {
-
-	chart, overrideValues, err := render(app)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"app":   app,
-			"chart": chart,
-		}).Fatal("Render function failed for app.")
-	}
-
-	if viper.GetBool("printRendered") {
-		log.WithFields(log.Fields{
-			"app":   app,
-			"chart": chart,
-		}).Info("Printing rendered override values for app.")
-		fmt.Print(string(overrideValues))
-		log.WithFields(log.Fields{
-			"app":   app,
-			"chart": chart,
-		}).Info("Done printing rendered override values for app.")
-	}
-
-	cmd := []interface{}{
-		"upgrade", app, chart,
-		"--force",
-		"--install",
-		"--recreate-pods",
-		"--values", "-",
-	}
-
-	err = sh.Command("helm", cmd...).SetInput(string(overrideValues)).Run()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"app":   app,
-			"chart": chart,
-		}).Fatal("Failed running `helm upgrade` for app.")
-	}
 }

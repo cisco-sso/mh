@@ -1,4 +1,4 @@
-// Copyright © 2017 Cisco Systems, Inc.
+// Copyright © 2018 Cisco Systems, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,13 +14,7 @@
 
 package cmd
 
-import (
-	"github.com/codeskyblue/go-sh"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
-	log "github.com/sirupsen/logrus"
-)
+import "github.com/spf13/cobra"
 
 // statusCmd represents the status command
 var statusCmd = &cobra.Command{
@@ -30,28 +24,13 @@ var statusCmd = &cobra.Command{
 apps, MultiHelm acts on all apps in your MultiHelm config.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		lateInit("status")
-		if len(args) > 0 {
-			for _, arg := range args {
-				status(arg)
-			}
-		} else {
-			for _, arg := range viper.GetStringSlice("apps") {
-				status(arg)
-			}
-		}
+
+		apps := getApps(args)
+
+		apps.Status()
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(statusCmd)
-}
-
-func status(app string) {
-	err := sh.Command("helm", "status", app).Run()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"app": app,
-			"err": err,
-		}).Fatal("Failed to get status for app.")
-	}
 }

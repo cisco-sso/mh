@@ -24,11 +24,8 @@ import (
 )
 
 var (
-	cfgFile          string
-	cfgFileSetMethod string
-	currentContext   string
-	tryCfgFile       string
-	versionNumber    string
+	configFileFlag string
+	versionNumber  string
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -62,13 +59,14 @@ func Execute() {
 }
 
 func init() {
-	versionNumber = "v0.2.2"
-	currentContext = getCurrentContext()
+	versionNumber = "v0.3.0"
 
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", `config file (you can instead set MULTIHELM_CONFIG)`)
+	RootCmd.PersistentFlags().StringVarP(&configFileFlag, "config", "c", "",
+		`config file (you can instead set MULTIHELM_CONFIG)`)
 	RootCmd.PersistentFlags().StringP("appsPath", "a", "./apps", "apps path")
+	RootCmd.PersistentFlags().BoolP("json", "j", false, "set logging to JSON format")
 
 	// Beware that init() happens too early to read values from Viper...
 	// See: https://github.com/spf13/cobra/issues/511
@@ -79,30 +77,44 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	// If env var is set, update cfgFile
-	envCfgFile, present := os.LookupEnv("MULTIHELM_CONFIG")
-	if present {
-		tryCfgFile = envCfgFile
-		cfgFileSetMethod = "env"
+
+	var (
+		configFile           string
+		configFileEnv        string
+		configFileEnvPresent bool
+		configFileOrigin     string
+	)
+
+	// If environment variable is set, load its value.
+	configFileEnv, configFileEnvPresent = os.LookupEnv("MULTIHELM_CONFIG")
+	if configFileEnvPresent {
+		configFile = configFileEnv
+		configFileOrigin = "env"
 	}
-	if cfgFile != "" {
-		// Override config file from the flag.
-		tryCfgFile = cfgFile
-		cfgFileSetMethod = "flag"
+	if configFileFlag != "" {
+		// If flag isn't empty, load its value instead.
+		configFile = configFileFlag
+		configFileOrigin = "flag"
 	}
-	viper.SetConfigFile(tryCfgFile)
+	viper.SetConfigFile(configFile)
 	viper.SetEnvPrefix("multihelm") // will be uppercased automatically
 	viper.AutomaticEnv()            // read in environment variables that match
 
-	// If a config file is found, read it in.
+	// If a configFile is found, read it in.
 	err := viper.ReadInConfig()
+	if viper.GetBool("json") {
+		log.SetFormatter(&log.JSONFormatter{})
+	}
 	if err != nil {
 		log.WithFields(log.Fields{
-			"err":              err,
-			"tryCfgFile":       tryCfgFile,
-			"cfgFileSetMethod": cfgFileSetMethod,
+			"configFile":           configFile,
+			"configFileEnv":        configFileEnv,
+			"configFileEnvPresent": configFileEnvPresent,
+			"configFileFlag":       configFileFlag,
+			"configFileOrigin":     configFileOrigin,
+			"configFileUsed":       getConfigFile(),
+			"err":                  err,
 		}).Fatalln("Failed to load MultiHelm config.",
-			"Please consider exporting env var MULTIHELM_CONFIG.")
-
+			"Please consider exporting environment variable: MULTIHELM_CONFIG.")
 	}
 }

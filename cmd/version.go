@@ -14,11 +14,7 @@
 
 package cmd
 
-import (
-	"github.com/spf13/cobra"
-
-	log "github.com/sirupsen/logrus"
-)
+import "github.com/spf13/cobra"
 
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
@@ -26,7 +22,7 @@ var versionCmd = &cobra.Command{
 	Short: "Print version information.",
 	Long:  `Print version information.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Info("MultiHelm " + versionNumber)
+		logVersion()
 	},
 }
 

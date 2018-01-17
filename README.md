@@ -34,25 +34,26 @@ Flags:
   -a, --appsPath string   apps path (default "./apps")
   -c, --config string     config file (you can instead set MULTIHELM_CONFIG)
   -h, --help              help for multihelm
+  -j, --json              set logging to JSON format
 
 Use "multihelm [command] --help" for more information about a command.
 ```
 
 ```
 $ multihelm license
-// Copyright © 2017 Cisco Systems, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+Copyright © 2018 Cisco Systems, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 ```
 
 ## Kubernetes Survival Handbook
@@ -177,4 +178,10 @@ multihelm destroy
 multihelm destroy wordpress
 # ^ destroy just these app(s),
 #   even if they are not in `minikube.yaml`
+```
+
+### Log to JSON!
+
+```
+multihelm status foo --json 2>&1 | jq --slurp
 ```

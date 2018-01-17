@@ -1,4 +1,4 @@
-// Copyright © 2017 Cisco Systems, Inc.
+// Copyright © 2018 Cisco Systems, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,148 +15,129 @@
 package cmd
 
 import (
-	"io/ioutil"
-	"os"
+	"fmt"
 	"strings"
 
 	"github.com/codeskyblue/go-sh"
-	"github.com/smallfish/simpleyaml"
 	"github.com/spf13/viper"
-	"k8s.io/helm/pkg/chartutil"
-	"k8s.io/helm/pkg/engine"
-	"k8s.io/helm/pkg/proto/hapi/chart"
 
+	lib "***REMOVED***/***REMOVED***/multihelm/multihelmlib"
 	log "github.com/sirupsen/logrus"
 )
 
-func buildDependencies(app string, chart string) {
-	// If requirements.yaml exists at chart, build dependencies for it,
-	// in the chart's own directory.
-	if _, err := os.Stat(chart + "/" + "requirements.yaml"); !os.IsNotExist(err) {
-		log.WithFields(log.Fields{
-			"app":   app,
-			"chart": chart,
-			"err":   err,
-		}).Info("Building chart dependencies for app.")
-		// We start a new shell session here so
-		// that we needn't tangle with `cd`.
-		session := sh.NewSession()
-		session.SetDir(chart)
-		out, err := session.Command(
-			"helm", "dependency", "build",
-		).Output()
-		if err != nil {
-			log.WithFields(log.Fields{
-				"app":   app,
-				"chart": chart,
-				"err":   err,
-				"out":   out,
-			}).Fatal("Failed to build chart dependencies for app.")
+func getApps(args []string) *lib.Apps {
+	var (
+		apps       []lib.App
+		configApps []lib.App
+		foundApp   bool
+	)
+	configApps = getConfigApps()
+	if len(args) > 0 {
+		for _, arg := range args {
+			foundApp = false
+			for _, configApp := range configApps {
+				if arg == configApp.Alias || arg == configApp.Name {
+					apps = append(apps, configApp)
+					foundApp = true
+					break
+				}
+			}
+			if foundApp == false {
+				log.WithFields(log.Fields{
+					"apps":       apps,
+					"arg":        arg,
+					"configApps": configApps,
+					"foundApp":   foundApp,
+				}).Fatal("Command line app name/alias not found in config.")
+			}
 		}
-		session.ShowCMD = true
+	} else {
+		apps = configApps
 	}
+	return &lib.Apps{
+		Apps: apps,
+	}
+}
+
+func getAppsPath() string {
+	return viper.GetString("appsPath")
+}
+
+func getConfigApps() []lib.App {
+	var apps []lib.App
+	err := viper.UnmarshalKey("apps", &apps)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Fatal("Failed to unmarshal 'apps:' from config.")
+	}
+	return apps
+}
+
+func getConfigFile() string {
+	return viper.ConfigFileUsed()
 }
 
 func getCurrentContext() string {
-	cmd := []interface{}{
-		"config",
-		"current-context",
-	}
-
-	out, err := sh.Command("kubectl", cmd...).Output()
+	out, err := sh.Command("kubectl", "config", "current-context").Output()
 	if err != nil {
 		log.Fatal("Failed running `kubectl config current-context`.")
 	}
+	currentContext := strings.TrimSuffix(string(out), "\n")
+	return currentContext
+}
 
-	return strings.TrimSuffix(string(out), "\n")
+func getPurge() bool {
+	return viper.GetBool("purge")
+}
+
+func getPrintRendered() bool {
+	return viper.GetBool("printRendered")
+}
+
+func getTargetContext() string {
+	return viper.GetString("targetContext")
 }
 
 func lateInit(cmd string) {
-	targetContext := viper.GetString("targetContext")
+	configFile := getConfigFile()
+	currentContext := getCurrentContext()
+	targetContext := getTargetContext()
 
 	if targetContext != currentContext {
 		log.WithFields(log.Fields{
-			"tryCfgFile":     viper.ConfigFileUsed(),
+			"configFile":     configFile,
 			"currentContext": currentContext,
 			"targetContext":  targetContext,
 		}).Fatal("`kubectl config current-context` does not match config's `targetContext`.")
 	}
 
 	log.WithFields(log.Fields{
-		"appsPath":       viper.GetString("appsPath"),
-		"tryCfgFile":     viper.ConfigFileUsed(),
+		"appsPath":       getAppsPath(),
+		"cmd":            cmd,
+		"configFile":     configFile,
 		"currentContext": currentContext,
 		"targetContext":  targetContext,
 		"versionNumber":  versionNumber,
 	}).Info("Initializing MultiHelm.")
-
-	if cmd != "version" {
-		log.Infof("`%s` called.", cmd)
-	}
-
-	return
 }
 
-func render(app string) (string, []byte, error) {
-	log.WithFields(log.Fields{
-		"app": app,
-	}).Info("Rendering app.")
+func logVersion() {
+	log.Info("MultiHelm " + versionNumber)
+}
 
-	configFile := viper.ConfigFileUsed()
-	config, err := chartutil.ReadValuesFile(configFile)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"app": app,
-		}).Fatal("Failed to load values while rendering app file.")
-	}
+func printLicense() {
+	fmt.Println(`Copyright © 2018 Cisco Systems, Inc.
 
-	appFile := viper.GetString("appsPath") + "/" + app + ".yaml"
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-	data, err := ioutil.ReadFile(appFile)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"app":     app,
-			"appFile": appFile,
-		}).Fatal("Failed to load app template while rendering app file.")
-	}
+    http://www.apache.org/licenses/LICENSE-2.0
 
-	fakeChart := &chart.Chart{
-		Metadata: &chart.Metadata{
-			Name:    "fake",
-			Version: "0.1.",
-		},
-		Templates: []*chart.Template{
-			{Name: "templates/main", Data: data},
-		},
-	}
-
-	out, err := engine.New().Render(fakeChart, config)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"app": app,
-			"err": err,
-		}).Fatal("Failed to render app file.")
-	}
-
-	overrideValues := []byte(out["fake/templates/main"])
-
-	yml, err := simpleyaml.NewYaml(overrideValues)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"app": app,
-			"err": err,
-		}).Fatal("Loading of override YAML failed for app.")
-	}
-
-	chart, err := yml.Get("chart").String()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"app": app,
-			"err": err,
-		}).Fatal("Lookup of chart in override YAML failed for app.")
-	}
-
-	buildDependencies(app, chart)
-
-	return chart, overrideValues, nil
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.`)
 }

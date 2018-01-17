@@ -9,7 +9,12 @@ maintainers:
 team: product
 
 apps:
-  - hello
-  - product
+  - name: hello
+    alias: goodbye
+    key: goodbye
+  - name: product
 
 imagePullPolicy: Always
+
+goodbye:
+  customValue: 100
