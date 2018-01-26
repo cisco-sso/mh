@@ -31,10 +31,10 @@ apps, MultiHelm acts on all apps in your MultiHelm config.`,
 		apps := getApps(args)
 
 		configFile := getConfigFile()
-		appsPath := getAppsPath()
+		appSources := getAppSources()
 		printRendered := getPrintRendered()
 
-		apps.Apply(configFile, appsPath, printRendered)
+		apps.Apply(configFile, appSources, printRendered)
 	},
 }
 

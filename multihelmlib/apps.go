@@ -18,9 +18,9 @@ type Apps struct {
 	Apps []App
 }
 
-func (a *Apps) Apply(configFile string, appsPath string, printRendered bool) {
+func (a *Apps) Apply(configFile string, appSources []AppSource, printRendered bool) {
 	for _, app := range a.Apps {
-		app.Apply(configFile, appsPath, printRendered)
+		app.Apply(configFile, appSources, printRendered)
 	}
 }
 
@@ -39,9 +39,9 @@ func (a *Apps) Id() []string {
 	return ids
 }
 
-func (a *Apps) Simulate(configFile string, appsPath string, printRendered bool) {
+func (a *Apps) Simulate(configFile string, appSources []AppSource, printRendered bool) {
 	for _, app := range a.Apps {
-		app.Simulate(configFile, appsPath, printRendered)
+		app.Simulate(configFile, appSources, printRendered)
 	}
 }
 

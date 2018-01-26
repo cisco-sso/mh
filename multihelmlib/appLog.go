@@ -19,7 +19,7 @@ import log "github.com/sirupsen/logrus"
 type AppLog struct {
 	app           *App
 	appFile       string
-	appsPath      string
+	appSources    []AppSource
 	cmd           []interface{}
 	configFile    string
 	data          []byte
@@ -41,17 +41,17 @@ func (a *AppLog) Error() {
 	}
 	msg := "Failed running '" + a.method + "' for app '" + id + "'"
 	log.WithFields(log.Fields{
-		"app":      a.app,
-		"appFile":  a.appFile,
-		"appsPath": a.appsPath,
-		"cmd":      a.cmd,
-		"data":     string(a.data),
-		"err":      a.err,
-		"id":       id,
-		"method":   a.method,
-		"purge":    a.purge,
-		"reason":   a.reason,
-		"simulate": a.simulate,
+		"app":        a.app,
+		"appFile":    a.appFile,
+		"appSources": a.appSources,
+		"cmd":        a.cmd,
+		"data":       string(a.data),
+		"err":        a.err,
+		"id":         id,
+		"method":     a.method,
+		"purge":      a.purge,
+		"reason":     a.reason,
+		"simulate":   a.simulate,
 	}).Fatal(msg)
 }
 
@@ -63,16 +63,16 @@ func (a *AppLog) Info(msg string) {
 		id = a.id
 	}
 	log.WithFields(log.Fields{
-		"app":      a.app,
-		"appFile":  a.appFile,
-		"appsPath": a.appsPath,
-		"cmd":      a.cmd,
-		"err":      a.err,
-		"data":     string(a.data),
-		"id":       id,
-		"method":   a.method,
-		"purge":    a.purge,
-		"reason":   a.reason,
-		"simulate": a.simulate,
+		"app":        a.app,
+		"appFile":    a.appFile,
+		"appSources": a.appSources,
+		"cmd":        a.cmd,
+		"err":        a.err,
+		"data":       string(a.data),
+		"id":         id,
+		"method":     a.method,
+		"purge":      a.purge,
+		"reason":     a.reason,
+		"simulate":   a.simulate,
 	}).Info(msg)
 }

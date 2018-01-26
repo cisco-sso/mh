@@ -59,8 +59,15 @@ func getApps(args []string) *lib.Apps {
 	}
 }
 
-func getAppsPath() string {
-	return viper.GetString("appsPath")
+func getAppSources() []lib.AppSource {
+	var appSources []lib.AppSource
+	err := viper.UnmarshalKey("appSources", &appSources)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err,
+		}).Fatal("Failed to unmarshal 'appSources'")
+	}
+	return appSources
 }
 
 func getConfigApps() []lib.App {
@@ -113,7 +120,7 @@ func lateInit(cmd string) {
 	}
 
 	log.WithFields(log.Fields{
-		"appsPath":       getAppsPath(),
+		"appSources":     getAppSources(),
 		"cmd":            cmd,
 		"configFile":     configFile,
 		"currentContext": currentContext,

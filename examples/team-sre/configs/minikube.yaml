@@ -1,8 +1,6 @@
 
 targetContext: minikube
 
-appsPath: ./apps
-
 team: sre
 
 maintainers:
@@ -12,7 +10,19 @@ apps:
   - name: hello
     alias: hello-morning
     key: helloMorning
+    # Optionally, override appSources mechanism like this...
+    #file: /tmp/hello-different.yaml
   - name: world
+
+## For each app, the first appSource to find the app file exists as specified is selected.
+## appSources are evaluated in the order declared here.
+appSources:
+  - name: apps
+    kind: path
+    source: ./apps
+# - name: foo-deploy
+#   kind: path
+#   source: src/***REMOVED***/***REMOVED***/foo-deploy/multihelm/apps
 
 imagePullPolicy: Always
 

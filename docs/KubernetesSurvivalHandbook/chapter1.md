@@ -379,8 +379,6 @@ override variables for the `minkube` conext (or some other context) here.
 ---
 targetContext: minikube
 
-appsPath: ./apps
-
 team: hello
 
 maintainers:
@@ -390,6 +388,18 @@ apps:
   - name: wordpress
     alias: wordpress-blue
     key: wordPressBlue
+    # Optionally:
+    #file: ./path/to/alternative/wordpress.yaml
+
+## For each app, the first appSource to find the app file exists as specified is selected.
+## appSources are evaluated in the order declared here.
+appSources:
+  - name: apps
+    kind: path
+    source: ./apps
+# - name: foo-deploy
+#   kind: path
+#   source: src/***REMOVED***/***REMOVED***/foo-deploy/multihelm/apps
 
 imagePullPolicy: IfNotPresent
 

@@ -31,7 +31,6 @@ Available Commands:
   version     Print version information.
 
 Flags:
-  -a, --appsPath string   apps path (default "./apps")
   -c, --config string     config file (you can instead set MULTIHELM_CONFIG)
   -h, --help              help for multihelm
   -j, --json              set logging to JSON format

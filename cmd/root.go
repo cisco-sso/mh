@@ -59,13 +59,12 @@ func Execute() {
 }
 
 func init() {
-	versionNumber = "v0.3.0"
+	versionNumber = "v0.4.0"
 
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVarP(&configFileFlag, "config", "c", "",
 		`config file (you can instead set MULTIHELM_CONFIG)`)
-	RootCmd.PersistentFlags().StringP("appsPath", "a", "./apps", "apps path")
 	RootCmd.PersistentFlags().BoolP("json", "j", false, "set logging to JSON format")
 
 	// Beware that init() happens too early to read values from Viper...

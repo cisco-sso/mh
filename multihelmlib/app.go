@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 
 	"github.com/codeskyblue/go-sh"
 	"github.com/smallfish/simpleyaml"
@@ -31,19 +32,20 @@ import (
 
 type App struct {
 	Alias string
+	File  string
 	Key   string
 	Name  string
 }
 
-func (a *App) Apply(configFile string, appsPath string,
+func (a *App) Apply(configFile string, appSources []AppSource,
 	printRendered bool) {
 	method := "apply"
 	simulate := false
-	cmd, err := a.apply(configFile, appsPath, printRendered, simulate)
+	cmd, err := a.apply(configFile, appSources, printRendered, simulate)
 	if err != nil {
 		appLog := &AppLog{
 			app:           a,
-			appsPath:      appsPath,
+			appSources:    appSources,
 			cmd:           cmd,
 			configFile:    configFile,
 			err:           err,
@@ -106,6 +108,54 @@ func (a *App) Destroy(purge bool) {
 	}
 }
 
+func (a *App) GetFile(appSources []AppSource) string {
+	var appFile, possibleFile string
+	method := "getAppFile"
+	if a.File != "" {
+		if _, err := os.Stat(a.File); os.IsNotExist(err) {
+			appLog := &AppLog{
+				app:    a,
+				method: method,
+				reason: "App.File not found. App.File overrides []AppSource lookup.",
+			}
+			appLog.Error()
+			return ""
+
+		}
+		return a.File
+	}
+	for _, appSource := range appSources {
+		if appSource.Kind == "path" {
+			possibleFile = appSource.Source + "/" + a.Name + ".yaml"
+		} else {
+			appLog := &AppLog{
+				app:        a,
+				appSources: appSources,
+				method:     method,
+				reason:     "One or more []AppSource has an unsupported Kind. Supported Kind values are: path",
+			}
+			appLog.Error()
+			return ""
+		}
+		if _, err := os.Stat(possibleFile); os.IsNotExist(err) {
+			continue
+		}
+		appFile = possibleFile
+		break
+	}
+	if appFile == "" {
+		appLog := &AppLog{
+			app:        a,
+			appSources: appSources,
+			method:     method,
+			reason:     "Failed to locate app file.",
+		}
+		appLog.Error()
+		return ""
+	}
+	return appFile
+}
+
 // Return app.Alias if one is set.
 // If a.Alias is not set, return a.Name.
 func (a *App) Id() string {
@@ -146,14 +196,14 @@ func (a *App) GetKey() string {
 	return ""
 }
 
-func (a *App) Simulate(configFile string, appsPath string, printRendered bool) {
+func (a *App) Simulate(configFile string, appSources []AppSource, printRendered bool) {
 	method := "simulate"
 	simulate := true
-	cmd, err := a.apply(configFile, appsPath, printRendered, simulate)
+	cmd, err := a.apply(configFile, appSources, printRendered, simulate)
 	if err != nil {
 		appLog := &AppLog{
 			app:           a,
-			appsPath:      appsPath,
+			appSources:    appSources,
 			cmd:           cmd,
 			configFile:    configFile,
 			err:           err,
@@ -176,14 +226,14 @@ func (a *App) Status() {
 			err:    err,
 			method: method,
 		}
-		appLog.Error()
+		appLog.Info("Helm status failed for app. Continuing anyway.")
 	}
 }
 
-func (app *App) apply(configFile string, appsPath string,
+func (app *App) apply(configFile string, appSources []AppSource,
 	printRendered bool, simulate bool) ([]interface{}, error) {
 
-	chart, overrides, err := app.render(appsPath, configFile)
+	chart, chartVersion, overrides, err := app.render(configFile, appSources)
 	if err != nil {
 		return nil, err
 	}
@@ -194,6 +244,11 @@ func (app *App) apply(configFile string, appsPath string,
 
 	// Prepare to do `helm upgrade`
 	cmd := []interface{}{"upgrade", app.Id(), chart}
+
+	// "specify the exact chart version to install. If this is not specified, the latest version is installed"
+	if chartVersion != "" {
+		cmd = append(cmd, []interface{}{"--version", chartVersion}...)
+	}
 
 	if simulate {
 		// "enable verbose output"
@@ -223,21 +278,22 @@ func (app *App) apply(configFile string, appsPath string,
 	return cmd, nil
 }
 
-func (app *App) render(appsPath string, configFile string) (string, []byte, error) {
+func (a *App) render(configFile string, appSources []AppSource) (string, string, []byte, error) {
+	var chartVersion string
 	method := "render"
 	appLog := &AppLog{
-		app:        app,
-		appsPath:   appsPath,
+		app:        a,
+		appSources: appSources,
 		configFile: configFile,
 		method:     method,
 	}
-	appLog.Info("Running '" + method + "' for app '" + app.Id() + "'")
+	appLog.Info("Running '" + method + "' for app '" + a.Id() + "'")
 
 	config, err := chartutil.ReadValuesFile(configFile)
 	if err != nil {
 		appLog := &AppLog{
-			app:        app,
-			appsPath:   appsPath,
+			app:        a,
+			appSources: appSources,
 			configFile: configFile,
 			err:        err,
 			method:     method,
@@ -246,13 +302,13 @@ func (app *App) render(appsPath string, configFile string) (string, []byte, erro
 		appLog.Error()
 	}
 
-	appFile := appsPath + "/" + app.Name + ".yaml"
+	appFile := a.GetFile(appSources)
 	appData, err := ioutil.ReadFile(appFile)
 	if err != nil {
 		appLog := &AppLog{
-			app:        app,
+			app:        a,
 			appFile:    appFile,
-			appsPath:   appsPath,
+			appSources: appSources,
 			configFile: configFile,
 			err:        err,
 			method:     method,
@@ -262,7 +318,7 @@ func (app *App) render(appsPath string, configFile string) (string, []byte, erro
 	}
 
 	data := []byte(
-		"{{- $name := \"" + app.Id() + "\" }}\n" + "{{- $app := " + app.GetKey() + " }}\n",
+		"{{- $name := \"" + a.Id() + "\" }}\n" + "{{- $app := " + a.GetKey() + " }}\n",
 	)
 
 	data = append(data, appData...)
@@ -280,9 +336,9 @@ func (app *App) render(appsPath string, configFile string) (string, []byte, erro
 	out, err := engine.New().Render(fakeChart, config)
 	if err != nil {
 		appLog := &AppLog{
-			app:        app,
+			app:        a,
 			appFile:    appFile,
-			appsPath:   appsPath,
+			appSources: appSources,
 			configFile: configFile,
 			data:       data,
 			err:        err,
@@ -297,9 +353,9 @@ func (app *App) render(appsPath string, configFile string) (string, []byte, erro
 	yml, err := simpleyaml.NewYaml(overrides)
 	if err != nil {
 		appLog := &AppLog{
-			app:        app,
+			app:        a,
 			appFile:    appFile,
-			appsPath:   appsPath,
+			appSources: appSources,
 			configFile: configFile,
 			err:        err,
 			method:     method,
@@ -311,9 +367,9 @@ func (app *App) render(appsPath string, configFile string) (string, []byte, erro
 	chart, err := yml.Get("chart").String()
 	if err != nil {
 		appLog := &AppLog{
-			app:        app,
+			app:        a,
 			appFile:    appFile,
-			appsPath:   appsPath,
+			appSources: appSources,
 			configFile: configFile,
 			err:        err,
 			method:     method,
@@ -321,8 +377,16 @@ func (app *App) render(appsPath string, configFile string) (string, []byte, erro
 		}
 		appLog.Error()
 	}
+	chartVersion, _ = yml.Get("version").String()
 
-	app.Build(chart)
+	// If key-value "chart" inside app YAML is determined to be a file path,
+	// build/update dependencies for it. If not a path, we needn't build
+	// for it.
+	re := regexp.MustCompile("(^(\\.).*)|(^/.*)")
+	isPath := re.MatchString(chart)
+	if isPath {
+		a.Build(chart)
+	}
 
-	return chart, overrides, nil
+	return chart, chartVersion, overrides, nil
 }
