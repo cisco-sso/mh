@@ -1,7 +1,7 @@
 
 # Kubernetes Survival Handbook
 
-**Chapter 1: MultiHelm at Minikube**
+**Chapter 1: MultiHelm v0.4.0 at Minikube**
 
 Contact: <josdotso@cisco.com>
 
@@ -15,7 +15,7 @@ Contact: <josdotso@cisco.com>
 
 [Helm](https://docs.helm.sh/using_helm/#quickstart)
 
-[MultiHelm](https://***REMOVED***)
+[MultiHelm](https://***REMOVED***) (use tag `v0.4.0`)
 
 
 ### Step 2: Start Minikube
@@ -81,263 +81,20 @@ mkdir hello-multihelm
 cd hello-multihelm
 git init 
 echo "# Hello MultiHelm" > README.md
-mkdir -p apps configs src
-touch apps/.gitkeep configs/.gitkeep src/.gitkeep
+mkdir -p apps configs
+touch apps/.gitkeep configs/.gitkeep
 git add .
 git commit -a -m "First commit"
 ```
 
-### Step 7: Add a "kubernetes/charts" repo as a submodule.
+### Step 7: Take a look at an example chart's "values.yaml" file.
 
-We recommend that you use a fork of [kubernetes/charts](https://github.com/kubernetes/charts)
-for this submodule. We're using the unforked repo only for this example.
+https://github.com/kubernetes/charts/tree/master/stable/wordpress
 
-I am happy to help you create such a fork if you'd like. -josdosto
+See how the defaults in
+[stable/wordpress/values.yaml](https://github.com/kubernetes/charts/blob/master/stable/wordpress/values.yaml)
+do not fit MiniKube? (example follows)
 
-Note that we namespace our submodules in a Golang-style tree. This allows
-you to use two different forks of the same repo at the same time. It also
-helps to reduce confusion and submodule name collisions.
-
-```
-git submodule add -b master ssh://git@github.com:kubernetes/charts.git src/github.com/kubernetes/charts
-git add .
-git commit -a -m "Add submodule 'src/github.com/kubernetes/charts'"
-```
-
-### Step 8: Take a look at an example chart's "values.yaml" file.
-
-We'll use MultiHelm to override these values. MultiHelm templates the **overriding** of
-Helm charts' `values.yaml` files.
-
-It's also wise to review the `README.md` for the chart you'd like to make into a
-"MultiHelm App".
-
-"MultiHelm App" is more accurately described as "A template for overriding a
-particular Helm chart".
-
-```
-$ ls src/github.com/kubernetes/charts/stable/
-Display all 109 possibilities? (y or n)
-acs-engine-autoscaler/  hadoop/                 moodle/                 selenium/
-artifactory/            heapster/               msoms/                  sensu/
-aws-cluster-autoscaler/ influxdb/               mysql/                  sentry/
-buildkite/              ipfs/                   namerd/                 sonarqube/
-centrifugo/             jasperreports/          nginx-ingress/          sonatype-nexus/
-chaoskube/              jenkins/                nginx-lego/             spark/
-chronograf/             joomla/                 odoo/                   spartakus/
-cluster-autoscaler/     kapacitor/              opencart/               spinnaker/
-cockroachdb/            keel/                   openvpn/                spotify-docker-gc/
-concourse/              kube-lego/              orangehrm/              stash/
-consul/                 kube-ops-view/          osclass/                sugarcrm/
-coredns/                kube-state-metrics/     owncloud/               suitecrm/
-coscale/                kube2iam/               parse/                  sumokube/
-dask-distributed/       kubed/                  percona/                sumologic-fluentd/
-datadog/                kubernetes-dashboard/   phabricator/            swift/
-dokuwiki/               linkerd/                phpbb/                  sysdig/
-drupal/                 locust/                 postgresql/             telegraf/
-etcd-operator/          magento/                prestashop/             testlink/
-external-dns/           mailhog/                prometheus/             traefik/
-factorio/               mariadb/                rabbitmq/               uchiwa/
-fluent-bit/             mcrouter/               redis/                  voyager/
-g2/                     mediawiki/              redis-ha/               weave-cloud/
-gcloud-endpoints/       memcached/              redmine/                wordpress/
-gcloud-sqlproxy/        metabase/               rethinkdb/              zeppelin/
-ghost/                  minecraft/              risk-advisor/           zetcd/
-gitlab-ce/              minio/                  rocketchat/
-gitlab-ee/              mongodb/                sapho/
-grafana/                mongodb-replicaset/     searchlight/ 
-
-$ ls src/github.com/kubernetes/charts/stable/wordpress
-Chart.yaml  README.md  requirements.lock  requirements.yaml  templates  values.yaml
-
-$ cat src/github.com/kubernetes/charts/stable/wordpress/values.yaml
-```
-
-(`values.yaml` follows)
-
-```
-## Bitnami WordPress image version
-## ref: https://hub.docker.com/r/bitnami/wordpress/tags/
-##
-image: bitnami/wordpress:4.9.0-r0
-
-## Specify a imagePullPolicy
-## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-##
-imagePullPolicy: IfNotPresent
-
-## User of the application
-## ref: https://github.com/bitnami/bitnami-docker-wordpress#environment-variables
-##
-wordpressUsername: user
-
-## Application password
-## Defaults to a random 10-character alphanumeric string if not set
-## ref: https://github.com/bitnami/bitnami-docker-wordpress#environment-variables
-##
-# wordpressPassword:
-
-## Admin email
-## ref: https://github.com/bitnami/bitnami-docker-wordpress#environment-variables
-##
-wordpressEmail: user@example.com
-
-## First name
-## ref: https://github.com/bitnami/bitnami-docker-wordpress#environment-variables
-##
-wordpressFirstName: FirstName
-
-## Last name
-## ref: https://github.com/bitnami/bitnami-docker-wordpress#environment-variables
-##
-wordpressLastName: LastName
-
-## Blog name
-## ref: https://github.com/bitnami/bitnami-docker-wordpress#environment-variables
-##
-wordpressBlogName: User's Blog!
-
-## Set to `yes` to allow the container to be started with blank passwords
-## ref: https://github.com/bitnami/bitnami-docker-wordpress#environment-variables
-allowEmptyPassword: yes
-
-## SMTP mail delivery configuration
-## ref: https://github.com/bitnami/bitnami-docker-wordpress/#smtp-configuration
-##
-# smtpHost:
-# smtpPort:
-# smtpUser:
-# smtpPassword:
-# smtpUsername:
-# smtpProtocol:
-
-##
-## MariaDB chart configuration
-##
-mariadb:
-  ## MariaDB admin password
-  ## ref: https://github.com/bitnami/bitnami-docker-mariadb/blob/master/README.md#setting-the-root-password-on-first-run
-  ##
-  # mariadbRootPassword:
-
-  ## Create a database
-  ## ref: https://github.com/bitnami/bitnami-docker-mariadb/blob/master/README.md#creating-a-database-on-first-run
-  ##
-  mariadbDatabase: bitnami_wordpress
-
-  ## Create a database user
-  ## ref: https://github.com/bitnami/bitnami-docker-mariadb/blob/master/README.md#creating-a-database-user-on-first-run
-  ##
-  mariadbUser: bn_wordpress
-
-  ## Password for mariadbUser
-  ## ref: https://github.com/bitnami/bitnami-docker-mariadb/blob/master/README.md#creating-a-database-user-on-first-run
-  ##
-  # mariadbPassword:
-
-  ## Enable persistence using Persistent Volume Claims
-  ## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
-  ##
-  persistence:
-    enabled: true
-    ## mariadb data Persistent Volume Storage Class
-    ## If defined, storageClassName: <storageClass>
-    ## If set to "-", storageClassName: "", which disables dynamic provisioning
-    ## If undefined (the default) or set to null, no storageClassName spec is
-    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
-    ##   GKE, AWS & OpenStack)
-    ##
-    # storageClass: "-"
-    accessMode: ReadWriteOnce
-    size: 8Gi
-
-## Kubernetes configuration
-## For minikube, set this to NodePort, elsewhere use LoadBalancer
-##
-serviceType: LoadBalancer
-
-## Allow health checks to be pointed at the https port
-healthcheckHttps: false
-
-## Configure ingress resource that allow you to access the
-## Wordpress instalation. Set up the URL
-## ref: http://kubernetes.io/docs/user-guide/ingress/
-##
-ingress:
-  ## Set to true to enable ingress record generation
-  enabled: false
-
-  ## The list of hostnames to be covered with this ingress record.
-  ## Most likely this will be just one host, but in the event more hosts are needed, this is an array
-  hosts:
-  - name: wordpress.local
-
-    ## Set this to true in order to enable TLS on the ingress record
-    ## A side effect of this will be that the backend wordpress service will be connected at port 443
-    tls: false
-
-    ## If TLS is set to true, you must declare what secret will store the key/certificate for TLS
-    tlsSecret: wordpress.local-tls
-
-    ## Ingress annotations done as key:value pairs
-    ## If you're using kube-lego, you will want to add:
-    ## kubernetes.io/tls-acme: true
-    ##
-    ## For a full list of possible ingress annotations, please see
-    ## ref: https://github.com/kubernetes/ingress-nginx/blob/master/docs/annotations.md
-    ##
-    ## If tls is set to true, annotation ingress.kubernetes.io/secure-backends: "true" will automatically be set
-    annotations:
-    #  kubernetes.io/ingress.class: nginx
-    #  kubernetes.io/tls-acme: true
-
-  secrets:
-  ## If you're providing your own certificates, please use this to add the certificates as secrets
-  ## key and certificate should start with -----BEGIN CERTIFICATE----- or
-  ## -----BEGIN RSA PRIVATE KEY-----
-  ##
-  ## name should line up with a tlsSecret set further up
-  ## If you're using kube-lego, this is unneeded, as it will create the secret for you if it is not set
-  ##
-  ## It is also possible to create and manage the certificates outside of this helm chart
-  ## Please see README.md for more information
-  # - name: wordpress.local-tls
-  #   key:
-  #   certificate:
-
-## Enable persistence using Persistent Volume Claims
-## ref: http://kubernetes.io/docs/user-guide/persistent-volumes/
-##
-persistence:
-  enabled: true
-  ## wordpress data Persistent Volume Storage Class
-  ## If defined, storageClassName: <storageClass>
-  ## If set to "-", storageClassName: "", which disables dynamic provisioning
-  ## If undefined (the default) or set to null, no storageClassName spec is
-  ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
-  ##   GKE, AWS & OpenStack)
-  ##
-  # storageClass: "-"
-  accessMode: ReadWriteOnce
-  size: 10Gi
-
-## Configure resource requests and limits
-## ref: http://kubernetes.io/docs/user-guide/compute-resources/
-##
-resources:
-  requests:
-    memory: 512Mi
-    cpu: 300m
-
-## Node labels for pod assignment
-## Ref: https://kubernetes.io/docs/user-guide/node-selection/
-##
-nodeSelector: {}
-```
-
-(Note how the defaults don't favor Minikube.)
-
-excerpt (from the file above):
 ```
 ## Kubernetes configuration
 ## For minikube, set this to NodePort, elsewhere use LoadBalancer
@@ -345,7 +102,12 @@ excerpt (from the file above):
 serviceType: LoadBalancer
 ```
 
-**Let's use MultiHelm to override these defaults!**
+MultiHelm templates the **overriding** of Helm charts' `values.yaml` files.
+In the next step, we'll use MultiHelm to override the `stable/wordpress`
+chart's default values.
+
+By the way, a "MultiHelm App" is basically a template for overriding
+a Helm chart.
 
 ### Step 8: Create a MultiHelm App for "kubernetes/stable/wordpress"
 
@@ -356,9 +118,14 @@ The following is a MultHelm App template. We'll use a central
 configuration file as the source of truth for it.
 
 ```
----
-chart: ./src/github.com/kubernetes/charts/stable/wordpress
+chart: stable/wordpress
 
+# Version here means chart version. See `helm search wordpress`.
+{{- if $app.version }}
+version: {{ $app.version }}
+{{- else }}
+version: 0.8.2
+{{- end }}
 
 image: {{ $app.image }}:{{ $app.imageTag }}
 
@@ -376,7 +143,6 @@ The following is a MultHelm configuration file. We can centralize our
 override variables for the `minkube` conext (or some other context) here.
 
 ```
----
 targetContext: minikube
 
 team: hello
@@ -387,9 +153,7 @@ maintainers:
 apps:
   - name: wordpress
     alias: wordpress-blue
-    key: wordPressBlue
-    # Optionally:
-    #file: ./path/to/alternative/wordpress.yaml
+    key: .wordpressBlue
 
 ## For each app, the first appSource to find the app file exists as specified is selected.
 ## appSources are evaluated in the order declared here.
@@ -397,9 +161,10 @@ appSources:
   - name: apps
     kind: path
     source: ./apps
-# - name: foo-deploy
+# - name: foo-deploy   # This is an example of how you might
+#                      # implement shared MultiHelm apps via Git submodule.
 #   kind: path
-#   source: src/***REMOVED***/***REMOVED***/foo-deploy/multihelm/apps
+#   source: ../submodules/***REMOVED***/***REMOVED***/foo-deploy/multihelm/apps
 
 imagePullPolicy: IfNotPresent
 
@@ -424,25 +189,27 @@ $ echo ${MULTIHELM_CONFIG}
 $ multihelm simulate --printRendered
 ```
 
-### Step 11: Apply the HELM_CONFIG's apps (without verbose app rendering).
+### Step 12: Apply the HELM_CONFIG's apps (without verbose app rendering).
 
 ```
 $ multihelm apply
 ```
 
-### Step 12: Commit your changes to git.
+### Step 13: Commit your changes to git.
 
 ```
 git add .
 git commit -a -m "Second commit."
 ```
 
-### Step 13: Learn more at the MultiHelm readme.
+### Step 14: Learn more at the MultiHelm readme.
 
 https://***REMOVED***
 
 Thanks for reading!
 
 Feel free to email me with any comments, questions, PRs or requests.
+
+I created a Spark channel for MultiHelm. Channel invites available upon request!
 
 -Joshua M. Dotson <josdotso@cisco.com>
