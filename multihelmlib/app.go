@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"regexp"
 
 	"github.com/codeskyblue/go-sh"
@@ -108,7 +109,7 @@ func (a *App) Destroy(purge bool) {
 	}
 }
 
-func (a *App) GetFile(appSources []AppSource) string {
+func (a *App) GetFile(appSources []AppSource, configFile string) string {
 	var appFile, possibleFile string
 	method := "getAppFile"
 	if a.File != "" {
@@ -127,6 +128,9 @@ func (a *App) GetFile(appSources []AppSource) string {
 	for _, appSource := range appSources {
 		if appSource.Kind == "path" {
 			possibleFile = appSource.Source + "/" + a.Name + ".yaml"
+		} else if appSource.Kind == "configPath" {
+			configPath := path.Dir(configFile)
+			possibleFile = configPath + "/" + appSource.Source + "/" + a.Name + ".yaml"
 		} else {
 			appLog := &AppLog{
 				app:        a,
@@ -302,7 +306,7 @@ func (a *App) render(configFile string, appSources []AppSource) (string, string,
 		appLog.Error()
 	}
 
-	appFile := a.GetFile(appSources)
+	appFile := a.GetFile(appSources, configFile)
 	appData, err := ioutil.ReadFile(appFile)
 	if err != nil {
 		appLog := &AppLog{

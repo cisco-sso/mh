@@ -59,7 +59,7 @@ func Execute() {
 }
 
 func init() {
-	versionNumber = "v0.4.0"
+	versionNumber = "v0.4.1"
 
 	cobra.OnInitialize(initConfig)
 
@@ -113,7 +113,7 @@ func initConfig() {
 			"configFileOrigin":     configFileOrigin,
 			"configFileUsed":       getConfigFile(),
 			"err":                  err,
-		}).Fatalln("Failed to load MultiHelm config.",
+		}).Warnln("Failed to load MultiHelm config.",
 			"Please consider exporting environment variable: MULTIHELM_CONFIG.")
 	}
 }
