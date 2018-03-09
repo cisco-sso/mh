@@ -1,4 +1,4 @@
-// Copyright © 2017 Cisco Systems, Inc.
+// Copyright © 2018 Cisco Systems, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,18 +30,18 @@ var (
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "multihelm",
+	Use:   "mh",
 	Short: "Operate multiple Helm charts",
-	Long: `                   ___    __        __              ___
-                  /\_ \  /\ \__  __/\ \            /\_ \
-  ___ ___   __  __\//\ \ \ \ ._\/\_\ \ \___      __\//\ \     ___ ___
-/. __. __.\/\ \/\ \ \ \ \ \ \ \/\/\ \ \  _  \  / __ \\ \ \  /  __. __.\
-/\ \/\ \/\ \ \ \_\ \ \_\ \_\ \ \_\ \ \ \ \ \ \/\  __/ \_\ \_/\ \/\ \/\ \
-\ \_\ \_\ \_\ \____/ /\____\\ \__\\ \_\ \_\ \_\ \____\/\____\ \_\ \_\ \_\
- \/_/\/_/\/_/\/___/  \/____/ \/__/ \/_/\/_/\/_/\/____/\/____/\/_/\/_/\/_/
+	Long: `           __
+           /\ \
+  ___ ___  \ \ \___
+/. __. __.\ \ \  _  \
+/\ \/\ \/\ \ \ \ \ \ \
+\ \_\ \_\ \_\ \ \_\ \_\
+ \/_/\/_/\/_/  \/_/\/_/
 
-MultiHelm simplifies multi-chart Helm workflows by rendering ephemeral Helm
-chart override files based on templates populated with values from MultiHelm
+mh simplifies multi-chart Helm workflows by rendering ephemeral Helm
+chart override files based on templates populated with values from mh
 YAML config files.
 
 In other words: We heard you like templates, so we templated your Helm value
@@ -59,12 +59,12 @@ func Execute() {
 }
 
 func init() {
-	versionNumber = "v0.4.1"
+	versionNumber = "v0.5.0"
 
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVarP(&configFileFlag, "config", "c", "",
-		`config file (you can instead set MULTIHELM_CONFIG)`)
+		`config file (you can instead set MH_CONFIG)`)
 	RootCmd.PersistentFlags().BoolP("json", "j", false, "set logging to JSON format")
 
 	// Beware that init() happens too early to read values from Viper...
@@ -85,7 +85,7 @@ func initConfig() {
 	)
 
 	// If environment variable is set, load its value.
-	configFileEnv, configFileEnvPresent = os.LookupEnv("MULTIHELM_CONFIG")
+	configFileEnv, configFileEnvPresent = os.LookupEnv("MH_CONFIG")
 	if configFileEnvPresent {
 		configFile = configFileEnv
 		configFileOrigin = "env"
@@ -96,8 +96,8 @@ func initConfig() {
 		configFileOrigin = "flag"
 	}
 	viper.SetConfigFile(configFile)
-	viper.SetEnvPrefix("multihelm") // will be uppercased automatically
-	viper.AutomaticEnv()            // read in environment variables that match
+	viper.SetEnvPrefix("mh") // will be uppercased automatically
+	viper.AutomaticEnv()     // read in environment variables that match
 
 	// If a configFile is found, read it in.
 	err := viper.ReadInConfig()
@@ -113,7 +113,7 @@ func initConfig() {
 			"configFileOrigin":     configFileOrigin,
 			"configFileUsed":       getConfigFile(),
 			"err":                  err,
-		}).Warnln("Failed to load MultiHelm config.",
-			"Please consider exporting environment variable: MULTIHELM_CONFIG.")
+		}).Warnln("Failed to load mh config.",
+			"Please consider exporting environment variable: MH_CONFIG.")
 	}
 }

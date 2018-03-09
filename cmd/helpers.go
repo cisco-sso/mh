@@ -21,7 +21,7 @@ import (
 	"github.com/codeskyblue/go-sh"
 	"github.com/spf13/viper"
 
-	lib "***REMOVED***/***REMOVED***/multihelm/multihelmlib"
+	lib "github.com/cisco-sso/mh/mhlib"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -126,11 +126,11 @@ func lateInit(cmd string) {
 		"currentContext": currentContext,
 		"targetContext":  targetContext,
 		"versionNumber":  versionNumber,
-	}).Info("Initializing MultiHelm.")
+	}).Info("Initializing mh.")
 }
 
 func logVersion() {
-	log.Info("MultiHelm " + versionNumber)
+	log.Info("mh " + versionNumber)
 }
 
 func printLicense() {

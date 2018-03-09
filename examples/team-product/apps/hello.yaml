@@ -1,7 +1,0 @@
-
-chart: ./src/hello
-
-image:
-  pullPolicy: {{ .imagePullPolicy }}
-
-customValue: {{ $app.customValue }}

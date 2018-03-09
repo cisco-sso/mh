@@ -23,8 +23,8 @@ import (
 var applyCmd = &cobra.Command{
 	Use:   "apply",
 	Short: "Apply apps",
-	Long: `Apply one or more MultiHelm apps. If you do not specify one or more
-apps, MultiHelm acts on all apps in your MultiHelm config.`,
+	Long: `Apply one or more mh apps. If you do not specify one or more
+apps, mh acts on all apps in your mh config.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		lateInit("apply")
 

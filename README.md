@@ -1,25 +1,25 @@
 
-# MultiHelm
+# mh
 
 ```
-$ multihelm --help
-                   ___    __        __              ___
-                  /\_ \  /\ \__  __/\ \            /\_ \
-  ___ ___   __  __\//\ \ \ \ ._\/\_\ \ \___      __\//\ \     ___ ___
-/. __. __.\/\ \/\ \ \ \ \ \ \ \/\/\ \ \  _  \  / __ \\ \ \  /  __. __.\
-/\ \/\ \/\ \ \ \_\ \ \_\ \_\ \ \_\ \ \ \ \ \ \/\  __/ \_\ \_/\ \/\ \/\ \
-\ \_\ \_\ \_\ \____/ /\____\\ \__\\ \_\ \_\ \_\ \____\/\____\ \_\ \_\ \_\
- \/_/\/_/\/_/\/___/  \/____/ \/__/ \/_/\/_/\/_/\/____/\/____/\/_/\/_/\/_/
+$ mh --help
+            __
+           /\ \
+  ___ ___  \ \ \___
+/. __. __.\ \ \  _  \
+/\ \/\ \/\ \ \ \ \ \ \
+\ \_\ \_\ \_\ \ \_\ \_\
+ \/_/\/_/\/_/  \/_/\/_/
 
-MultiHelm simplifies multi-chart Helm workflows by rendering ephemeral Helm
-chart override files based on templates populated with values from MultiHelm
+mh simplifies multi-chart Helm workflows by rendering ephemeral Helm
+chart override files based on templates populated with values from mh
 YAML config files.
 
 In other words: We heard you like templates, so we templated your Helm value
 overrides.
 
 Usage:
-  multihelm [command]
+  mh [command]
 
 Available Commands:
   apply       Apply apps
@@ -31,15 +31,15 @@ Available Commands:
   version     Print version information.
 
 Flags:
-  -c, --config string     config file (you can instead set MULTIHELM_CONFIG)
-  -h, --help              help for multihelm
+  -c, --config string     config file (you can instead set MH_CONFIG)
+  -h, --help              help for mh
   -j, --json              set logging to JSON format
 
-Use "multihelm [command] --help" for more information about a command.
+Use "mh [command] --help" for more information about a command.
 ```
 
 ```
-$ multihelm license
+$ mh license
 Copyright © 2018 Cisco Systems, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -55,16 +55,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-## Kubernetes Survival Handbook
-
-This guide to Kubernetes lives in the `docs` folder of this repo.
-
-Chapter 1, entitled "MultiHelm at Minikube", starts [here](https://***REMOVED***/browse/docs/KubernetesSurvivalHandbook/chapter1.md).
-
-
 ## Getting Started
 
-### Install MultiHelm.
+### Install mh.
 
 (NOTE: Build below currently requires a working golang dev environment.)
 
@@ -72,35 +65,14 @@ Chapter 1, entitled "MultiHelm at Minikube", starts [here](https://***REMOVED***
 
 ```
 go get -u github.com/golang/dep/cmd/dep   # https://github.com/golang/dep
-mkdir -p $GOPATH/src/***REMOVED***/***REMOVED***
-cd $GOPATH/src/***REMOVED***/***REMOVED***
-git clone ssh://***REMOVED***/***REMOVED***/multihelm.git
-cd multihelm
+mkdir -p $GOPATH/src/github.com/cisco-sso
+cd $GOPATH/src/github.com/cisco-sso
+git clone git@github.com:cisco-sso/mh.git
+cd mh
 dep ensure
-go build -o /tmp/multihelm main.go
-sudo cp /tmp/multihelm /usr/local/bin
-rm -f /tmp/multihelm
-```
-
-### Clone the example "hello-multihelm" repo.
-
-(Or make a new MultiHelm manifests repo for your team.)
-
-https://***REMOVED***/bitbucket/projects/***REMOVED***/repos/hello-multihelm
-
-```
-git clone ssh://***REMOVED***/***REMOVED***/hello-multihelm.git
-cd hello-multihelm
-```
-
-### Initialize and update git submodules used by this repo.
-
-(It is a best practice to keep charts external to your MultHelm and version-lock
-your usage of them via git submodule.)
-
-```
-git submodule init
-git submodule update
+go build -o /tmp/mh main.go
+sudo cp /tmp/mh /usr/local/bin
+rm -f /tmp/mh
 ```
 
 ### Select a kubectl context.
@@ -112,24 +84,24 @@ kubectl config get-contexts
 kubectl config use-context minikube
 ```
 
-### Select a MultiHelm config.
+### Select a mh config.
 
-(There's usally one MultiHelm config per kubetl context, but we've left it open
+(There's usally one mh config per kubetl context, but we've left it open
 ended so that multple teams can more easily work together on one cluster.)
 
 ```
-export MULTIHELM_CONFIG="$(pwd)/configs/minikube.yaml"
+export MH_CONFIG="/path/to/clusters/minikube/mh/main.yaml"
 ```
 
-### Get status of everything at context "minkube" managed by this MultiHelm config.
+### Get status of everything at context "minkube" managed by this mh config.
 
 (This basically runs `helm status` for each app you target.)
 
 ```
-multihelm status
-# ^ get status for all apps in `minikube.yaml`
+mh status
+# ^ get status for all apps in `main.yaml`
 
-multihelm status wordpress
+mh status wordpress
 # ^ get status for just these app(s)
 ```
 
@@ -139,16 +111,16 @@ multihelm status wordpress
 with debug and dry-run modes enabled.)
 
 ```
-multihelm simulate
-# ^ simulate install/upgrade for all apps in `minikube.yaml`
+mh simulate
+# ^ simulate install/upgrade for all apps in `main.yaml`
 
-multihelm simulate --printRendered
-# ^ simulate install/upgrade for all apps in `minikube.yaml`
+mh simulate --printRendered
+# ^ simulate install/upgrade for all apps in `main.yaml`
 #   (verbosely printing app template renderings)
 
-multihelm simulate wordpress
+mh simulate wordpress
 # ^ simulate install/upgrade just these app(s),
-#   even if they are not in `minikube.yaml`
+#   even if they are not in `main.yaml`
 ```
 
 ### Apply app upgrades (or install apps, as needed).
@@ -156,16 +128,16 @@ multihelm simulate wordpress
 (For each app you target, apply runs a Helm upgrade/install).
 
 ```
-multihelm apply
-# ^ apply install/upgrade for all apps in `minikube.yaml`
+mh apply
+# ^ apply install/upgrade for all apps in `main.yaml`
 
-multihelm apply --printRendered
-# ^ apply install/upgrade for all apps in `minikube.yaml`
+mh apply --printRendered
+# ^ apply install/upgrade for all apps in `main.yaml`
 #   (verbosely printing app template renderings)
 
-multihelm apply wordpress
+mh apply wordpress
 # ^ apply install/upgrade just these app(s),
-#   even if they are not in `minikube.yaml`
+#   even if they are not in `main.yaml`
 ```
 
 ### Destroy apps (if they are known to Helm).
@@ -173,16 +145,16 @@ multihelm apply wordpress
 (For each app you target, apply runs a Helm delete without purge).
 
 ```
-multihelm destroy
-# ^ destroy all apps in `minikube.yaml`
+mh destroy
+# ^ destroy all apps in `main.yaml`
 
-multihelm destroy wordpress
+mh destroy wordpress
 # ^ destroy just these app(s),
-#   even if they are not in `minikube.yaml`
+#   even if they are not in `main.yaml`
 ```
 
 ### Log to JSON!
 
 ```
-multihelm status foo --json 2>&1 | jq --slurp
+mh status foo --json 2>&1 | jq --slurp
 ```

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package multihelmlib
+package mhlib
 
 import (
 	"fmt"
@@ -194,7 +194,7 @@ func (a *App) GetKey() string {
 		app:    a,
 		id:     id,
 		method: method,
-		reason: "Failed to determine app key. Please consider defining 'key:' on your app in your MultiHelm config.",
+		reason: "Failed to determine app key. Please consider defining 'key:' on your app in your mh config.",
 	}
 	appLog.Error()
 	return ""

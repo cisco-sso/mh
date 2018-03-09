@@ -1,5 +1,0 @@
-
-chart: ./src/product
-
-image:
-  pullPolicy: {{ .imagePullPolicy }}

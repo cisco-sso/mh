@@ -1,5 +1,0 @@
-
-chart: ./src/world
-
-image:
-  pullPolicy: {{ .imagePullPolicy }}
