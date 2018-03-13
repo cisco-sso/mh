@@ -32,7 +32,7 @@ var (
 var RootCmd = &cobra.Command{
 	Use:   "mh",
 	Short: "Operate multiple Helm charts",
-	Long: `           __
+	Long: `            __
            /\ \
   ___ ___  \ \ \___
 /. __. __.\ \ \  _  \
