@@ -158,3 +158,7 @@ mh destroy wordpress
 ```
 mh status foo --json 2>&1 | jq --slurp
 ```
+
+## Contributing
+
+For information on contributing to this repo, please see the accompanying `CONTRIBUTING.md` file.
