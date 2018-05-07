@@ -59,20 +59,8 @@ limitations under the License.
 
 ### Install mh.
 
-(NOTE: Build below currently requires a working golang dev environment.)
-
-(Simplified install coming soon!)
-
 ```
-go get -u github.com/golang/dep/cmd/dep   # https://github.com/golang/dep
-mkdir -p $GOPATH/src/github.com/cisco-sso
-cd $GOPATH/src/github.com/cisco-sso
-git clone git@github.com:cisco-sso/mh.git
-cd mh
-dep ensure
-go build -o /tmp/mh main.go
-sudo cp /tmp/mh /usr/local/bin
-rm -f /tmp/mh
+go get -u github.com/cisco-sso/mh
 ```
 
 ### Select a kubectl context.
