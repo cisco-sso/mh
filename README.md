@@ -147,6 +147,29 @@ mh destroy wordpress
 mh status foo --json 2>&1 | jq --slurp
 ```
 
+## Docker
+
+```
+docker run --rm \
+  -v $(pwd):/platform-deploy \
+  -v ~/.kube:/.kube \
+  -v ~/.helm:/root/.helm \
+  -e KUBECONFIG=/.kube/mycluster.example.org \
+  -e MH_CONFIG=/platform-deploy/clusters/mycluster.example.org/mh/main.yaml \
+  ciscosso/mh simulate
+```
+
+**NOTE:** The MH apps and config in this example exist in the platform-deploy tree.
+
+Apps should be stored relative to MH config. (use `configPath` instead of `path`).
+
+```
+appSources:
+  - name: apps
+    kind: configPath
+    source: ../../../apps
+```
+
 ## Contributing
 
 For information on contributing to this repo, please see the accompanying `CONTRIBUTING.md` file.
