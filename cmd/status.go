@@ -14,7 +14,12 @@
 
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	lib "github.com/cisco-sso/mh/mhlib"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
 
 // statusCmd represents the status command
 var statusCmd = &cobra.Command{
@@ -23,11 +28,37 @@ var statusCmd = &cobra.Command{
 	Long: `Get status one or more mh apps. If you do not specify one or more
 apps, mh acts on all apps in your mh config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		lateInit("status")
+		logger := logrus.New().WithField("command", "status")
+		if viper.GetBool("json") {
+			logger.Logger.Formatter = new(logrus.JSONFormatter)
+		}
+		mhConfigFile := unmarshalConfig(logger)
 
-		apps := getApps(args)
+		// Merge configuration from file, environment and CLI into default
+		// configuration
+		effectiveMHConfig, err := lib.MergeMHConfigs(lib.DefaultMHConfig, mhConfigFile.MH)
+		if err != nil {
+			logger.WithField("error", err).Fatal("Failed to build effective MH configuration")
+		}
 
-		apps.Status()
+		// Ensure TargetContext is the current kubectl context
+		ensureCurrentContext(logger, *effectiveMHConfig)
+
+		// Get effective apps
+		apps, err := mhConfigFile.EffectiveApps(logger, viper.ConfigFileUsed(), args, *effectiveMHConfig)
+		if err != nil {
+			logger.WithField("error", err).Fatal("Failed to build effective apps")
+		}
+
+		for _, app := range *apps {
+			err := app.Status()
+			if err != nil {
+				logger.WithFields(logrus.Fields{
+					"app":   app.Name,
+					"error": err,
+				}).Fatal("Failed running status")
+			}
+		}
 	},
 }
 

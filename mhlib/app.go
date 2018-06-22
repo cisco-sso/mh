@@ -18,8 +18,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"regexp"
+
+	"github.com/imdario/mergo"
+	"github.com/sirupsen/logrus"
 
 	"github.com/codeskyblue/go-sh"
 	"github.com/smallfish/simpleyaml"
@@ -31,42 +33,72 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type App struct {
-	Alias string
-	File  string
-	Key   string
-	Name  string
+// AppConfig is what can be defined in a mh configuration file and is used to
+// create an App struct. It is a superset of MHConfig to enable app-specific
+// configuration overrides of all mh configuration settings.
+//
+// Maybe: Get rid of Alias in favor of ID
+type AppConfig struct {
+	Alias string   `yaml:"alias"`
+	File  *AppFile `yaml:"file"`
+	Key   string   `yaml:"key"`
+	Name  string   `yaml:"name"`
+	MHConfig
 }
 
-func (a *App) Apply(configFile string, appSources []AppSource,
-	printRendered bool) {
-	method := "apply"
-	simulate := false
-	cmd, err := a.apply(configFile, appSources, printRendered, simulate)
-	if err != nil {
-		appLog := &AppLog{
-			app:           a,
-			appSources:    appSources,
-			cmd:           cmd,
-			configFile:    configFile,
-			err:           err,
-			method:        method,
-			printRendered: printRendered,
-			simulate:      simulate,
-		}
-		appLog.Error()
+// AppConfigs is an array of AppConfig as defined in a mh configuration file.
+type AppConfigs []AppConfig
+
+// App contains attributes defining a mh app to run and app-specific mh
+// configuration overrides.
+type App struct {
+	AppConfig
+	ID  string
+	log *logrus.Entry
+}
+
+// NewApp returns an App based on a appConfig and global MHConfig defaults.
+func NewApp(logger *logrus.Entry, appConfig AppConfig, mhConfig MHConfig) (*App, error) {
+	// Sanitize configuration
+	// Todo: sanitize more, no dashes allowed etc.
+	if appConfig.Name == "" {
+		return nil, fmt.Errorf("Empty name for app: %v", appConfig)
 	}
+
+	// Set configuration defaults if not overridden
+	err := mergo.Merge(&appConfig.MHConfig, mhConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set App ID, prioritize Alias over Name.
+	var id string
+	if appConfig.Alias != "" {
+		id = appConfig.Alias
+	} else {
+		id = appConfig.Name
+	}
+
+	// Set App Key to default of ".ID" if not defined
+	if appConfig.Key == "" {
+		appConfig.Key = fmt.Sprintf(".%s", strcase.LowerCamelCase(id))
+	}
+
+	return &App{
+		appConfig,
+		id,
+		logger.WithField("app", appConfig.Name),
+	}, nil
 }
 
 // Build app's chart dependencies.
 //
 // If requirements.yaml exists at app's chart, run `helm dependency build`
 // to build dependencies at that chart's directory.
-func (a *App) Build(chart string) {
+func (a *App) Build(chart string) error {
 	requirementsFile := chart + "/" + "requirements.yaml"
 	if _, err := os.Stat(requirementsFile); !os.IsNotExist(err) {
-		log.WithFields(log.Fields{
-			"app":              a,
+		a.log.WithFields(log.Fields{
 			"chart":            chart,
 			"requirementsFile": requirementsFile,
 		}).Info("Building chart dependencies for app.")
@@ -78,180 +110,60 @@ func (a *App) Build(chart string) {
 		// Run `helm dependency build` on the chart.
 		out, err := session.Command("helm", "dependency", "update").Output()
 		if err != nil {
-			log.WithFields(log.Fields{
-				"app":              a,
-				"chart":            chart,
-				"err":              err,
-				"out":              out,
-				"requirementsFile": requirementsFile,
-			}).Fatal("Failed to build chart dependencies for app.")
+			return fmt.Errorf("Failed to build chart dependencies for app: %v", out)
 		}
+
 		session.ShowCMD = true
 	}
+
+	return nil
 }
 
-func (a *App) Destroy(purge bool) {
-	method := "destroy"
-	cmd := []interface{}{"delete", a.Id()}
+func (a *App) Destroy(purge bool) (*[]interface{}, error) {
+	a.log.Info("Destroying app")
+	cmd := []interface{}{"delete", a.ID}
 	if purge {
 		cmd = append(cmd, []interface{}{"--purge"}...)
 	}
 	err := sh.Command("helm", cmd...).Run()
 	if err != nil {
-		appLog := &AppLog{
-			app:    a,
-			cmd:    cmd,
-			err:    err,
-			method: method,
-			purge:  purge,
-		}
-		appLog.Info("Helm delete failed for app. Continuing anyway.")
+		return &cmd, fmt.Errorf("Helm delete failed for app")
 	}
+
+	return nil, nil
 }
 
-func (a *App) GetFile(appSources []AppSource, configFile string) string {
-	var appFile, possibleFile string
-	method := "getAppFile"
-	if a.File != "" {
-		if _, err := os.Stat(a.File); os.IsNotExist(err) {
-			appLog := &AppLog{
-				app:    a,
-				method: method,
-				reason: "App.File not found. App.File overrides []AppSource lookup.",
-			}
-			appLog.Error()
-			return ""
-
-		}
-		return a.File
-	}
-	for _, appSource := range appSources {
-		if appSource.Kind == "path" {
-			possibleFile = appSource.Source + "/" + a.Name + ".yaml"
-		} else if appSource.Kind == "configPath" {
-			configPath := path.Dir(configFile)
-			possibleFile = configPath + "/" + appSource.Source + "/" + a.Name + ".yaml"
-		} else {
-			appLog := &AppLog{
-				app:        a,
-				appSources: appSources,
-				method:     method,
-				reason:     "One or more []AppSource has an unsupported Kind. Supported Kind values are: path",
-			}
-			appLog.Error()
-			return ""
-		}
-		if _, err := os.Stat(possibleFile); os.IsNotExist(err) {
-			continue
-		}
-		appFile = possibleFile
-		break
-	}
-	if appFile == "" {
-		appLog := &AppLog{
-			app:        a,
-			appSources: appSources,
-			method:     method,
-			reason:     "Failed to locate app file.",
-		}
-		appLog.Error()
-		return ""
-	}
-	return appFile
-}
-
-// Return app.Alias if one is set.
-// If a.Alias is not set, return a.Name.
-func (a *App) Id() string {
-	var id string
-	method := "id"
-	if a.Alias != "" {
-		id = a.Alias
-	} else if a.Name != "" {
-		id = a.Name
-	} else {
-		appLog := &AppLog{
-			app:    a,
-			id:     id,
-			method: method,
-			reason: "Neither 'app.Alias' nor 'app.Name' were found.",
-		}
-		appLog.Error()
-	}
-	return id
-}
-
-func (a *App) GetKey() string {
-	method := "getkey"
-	if a.Key != "" {
-		return a.Key
-	}
-	id := a.Id()
-	if id != "" {
-		return "." + strcase.LowerCamelCase(id)
-	}
-	appLog := &AppLog{
-		app:    a,
-		id:     id,
-		method: method,
-		reason: "Failed to determine app key. Please consider defining 'key:' on your app in your mh config.",
-	}
-	appLog.Error()
-	return ""
-}
-
-func (a *App) Simulate(configFile string, appSources []AppSource, printRendered bool) {
-	method := "simulate"
-	simulate := true
-	cmd, err := a.apply(configFile, appSources, printRendered, simulate)
-	if err != nil {
-		appLog := &AppLog{
-			app:           a,
-			appSources:    appSources,
-			cmd:           cmd,
-			configFile:    configFile,
-			err:           err,
-			method:        method,
-			printRendered: printRendered,
-			simulate:      simulate,
-		}
-		appLog.Error()
-	}
-}
-
-func (a *App) Status() {
-	method := "status"
-	cmd := []interface{}{"status", a.Id()}
+func (a *App) Status() error {
+	cmd := []interface{}{"status", a.ID}
 	err := sh.Command("helm", cmd...).Run()
 	if err != nil {
-		appLog := &AppLog{
-			app:    a,
-			cmd:    cmd,
-			err:    err,
-			method: method,
-		}
-		appLog.Info("Helm status failed for app. Continuing anyway.")
+		return fmt.Errorf("Helm status failed")
 	}
+
+	return nil
 }
 
-func (app *App) apply(configFile string, appSources []AppSource,
-	printRendered bool, simulate bool) ([]interface{}, error) {
+func (a *App) Apply(configFile string) (*[]interface{}, error) {
+	a.log.Info("Applying app")
+	return a.apply(configFile, false)
+}
 
-	chart, chartVersion, overrides, err := app.render(configFile, appSources)
+func (a *App) apply(configFile string, simulate bool) (*[]interface{}, error) {
+	chart, chartVersion, overrides, err := a.render(configFile)
 	if err != nil {
 		return nil, err
 	}
 
-	if printRendered {
-		fmt.Print(string(overrides))
+	if a.PrintRendered {
+		fmt.Print(string(*overrides))
 	}
 
 	// Prepare to do `helm upgrade`
-	cmd := []interface{}{"upgrade", app.Id(), chart}
+	cmd := []interface{}{"upgrade", a.ID, *chart}
 
 	// "specify the exact chart version to install. If this is not specified, the latest version is installed"
-	if chartVersion != "" {
-		cmd = append(cmd, []interface{}{"--version", chartVersion}...)
+	if chartVersion != nil {
+		cmd = append(cmd, []interface{}{"--version", *chartVersion}...)
 	}
 
 	if simulate {
@@ -275,54 +187,33 @@ func (app *App) apply(configFile string, appSources []AppSource,
 	cmd = append(cmd, []interface{}{"--values", "-"}...)
 
 	// Run `helm upgrade
-	err = sh.Command("helm", cmd...).SetInput(string(overrides)).Run()
+	err = sh.Command("helm", cmd...).SetInput(string(*overrides)).Run()
 	if err != nil {
-		return cmd, err
+		return &cmd, err
 	}
-	return cmd, nil
+	return &cmd, nil
 }
 
-func (a *App) render(configFile string, appSources []AppSource) (string, string, []byte, error) {
+func (a *App) Simulate(configFile string) (*[]interface{}, error) {
+	a.log.Info("Simulating app")
+	return a.apply(configFile, true)
+}
+
+func (a *App) render(configFile string) (*string, *string, *[]byte, error) {
 	var chartVersion string
-	method := "render"
-	appLog := &AppLog{
-		app:        a,
-		appSources: appSources,
-		configFile: configFile,
-		method:     method,
-	}
-	appLog.Info("Running '" + method + "' for app '" + a.Id() + "'")
 
 	config, err := chartutil.ReadValuesFile(configFile)
 	if err != nil {
-		appLog := &AppLog{
-			app:        a,
-			appSources: appSources,
-			configFile: configFile,
-			err:        err,
-			method:     method,
-			reason:     "Failed to load values from configFile.",
-		}
-		appLog.Error()
+		return nil, nil, nil, fmt.Errorf("Failed to load values from configFile: %v", err)
 	}
 
-	appFile := a.GetFile(appSources, configFile)
-	appData, err := ioutil.ReadFile(appFile)
+	appData, err := ioutil.ReadFile(*a.File.Path)
 	if err != nil {
-		appLog := &AppLog{
-			app:        a,
-			appFile:    appFile,
-			appSources: appSources,
-			configFile: configFile,
-			err:        err,
-			method:     method,
-			reason:     "Failed to load data from appFile.",
-		}
-		appLog.Error()
+		return nil, nil, nil, fmt.Errorf("Failed to load data from appFile: %v", err)
 	}
 
 	data := []byte(
-		"{{- $name := \"" + a.Id() + "\" }}\n" + "{{- $app := " + a.GetKey() + " }}\n",
+		"{{- $name := \"" + a.ID + "\" }}\n" + "{{- $app := " + a.Key + " }}\n",
 	)
 
 	data = append(data, appData...)
@@ -339,47 +230,19 @@ func (a *App) render(configFile string, appSources []AppSource) (string, string,
 
 	out, err := engine.New().Render(fakeChart, config)
 	if err != nil {
-		appLog := &AppLog{
-			app:        a,
-			appFile:    appFile,
-			appSources: appSources,
-			configFile: configFile,
-			data:       data,
-			err:        err,
-			method:     method,
-			reason:     "Helm rendering engine failed to render fakeChart.",
-		}
-		appLog.Error()
+		return nil, nil, nil, fmt.Errorf("Helm rendering engine failed to render fakeChart: %v", err)
 	}
 
 	overrides := []byte(out["fake/templates/main"])
 
 	yml, err := simpleyaml.NewYaml(overrides)
 	if err != nil {
-		appLog := &AppLog{
-			app:        a,
-			appFile:    appFile,
-			appSources: appSources,
-			configFile: configFile,
-			err:        err,
-			method:     method,
-			reason:     "Failed to load newly rendered overrides YAML.",
-		}
-		appLog.Error()
+		return nil, nil, nil, fmt.Errorf("Failed to load newly rendered overrides YAML: %v", err)
 	}
 
 	chart, err := yml.Get("chart").String()
 	if err != nil {
-		appLog := &AppLog{
-			app:        a,
-			appFile:    appFile,
-			appSources: appSources,
-			configFile: configFile,
-			err:        err,
-			method:     method,
-			reason:     "Failed to lookup chart in overrides YAML.",
-		}
-		appLog.Error()
+		return nil, nil, nil, fmt.Errorf("Failed to lookup chart in overrides YAML: %v", err)
 	}
 	chartVersion, _ = yml.Get("version").String()
 
@@ -389,8 +252,11 @@ func (a *App) render(configFile string, appSources []AppSource) (string, string,
 	re := regexp.MustCompile("(^(\\.).*)|(^/.*)")
 	isPath := re.MatchString(chart)
 	if isPath {
-		a.Build(chart)
+		err = a.Build(chart)
+		if err != nil {
+			return nil, nil, nil, err
+		}
 	}
 
-	return chart, chartVersion, overrides, nil
+	return &chart, &chartVersion, &overrides, nil
 }

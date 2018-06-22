@@ -111,7 +111,7 @@ func initConfig() {
 			"configFileEnvPresent": configFileEnvPresent,
 			"configFileFlag":       configFileFlag,
 			"configFileOrigin":     configFileOrigin,
-			"configFileUsed":       getConfigFile(),
+			"configFileUsed":       viper.ConfigFileUsed(),
 			"err":                  err,
 		}).Warnln("Failed to load mh config.",
 			"Please consider exporting environment variable: MH_CONFIG.")
