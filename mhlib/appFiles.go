@@ -12,26 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package mhlib
 
-import (
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-)
-
-// versionCmd represents the version command
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print version information.",
-	Long:  `Print version information.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		logrus.WithFields(logrus.Fields{
-			"command": "version",
-			"version": versionNumber,
-		}).Info("mh")
-	},
-}
-
-func init() {
-	RootCmd.AddCommand(versionCmd)
-}
+// AppFiles is a map of app names to their respective AppFile.
+type AppFiles map[string]AppFile

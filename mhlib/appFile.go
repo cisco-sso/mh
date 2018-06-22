@@ -12,26 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package mhlib
 
-import (
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-)
-
-// versionCmd represents the version command
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print version information.",
-	Long:  `Print version information.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		logrus.WithFields(logrus.Fields{
-			"command": "version",
-			"version": versionNumber,
-		}).Info("mh")
-	},
-}
-
-func init() {
-	RootCmd.AddCommand(versionCmd)
+// AppFile is represents the way to retrieve a certain mh app. It may currently
+// only contain a Path to a file on disk.
+//
+// Todo: Extend AppFile, AppSources and App.render() together with alternative
+// sources like git or s3.
+type AppFile struct {
+	Path *string `yaml:"path"`
 }

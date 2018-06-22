@@ -12,26 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package mhlib
 
-import (
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-)
+// AppSources is an Array of AppSources at runtime.
+type AppSources []AppSource
 
-// versionCmd represents the version command
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print version information.",
-	Long:  `Print version information.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		logrus.WithFields(logrus.Fields{
-			"command": "version",
-			"version": versionNumber,
-		}).Info("mh")
-	},
-}
+// File calls AppSource.File on all AppSources and returns on the first match.
+//
+// Todo: Add priorities in case of multiple matches.
+func (as *AppSources) File(appConfig *AppConfig) bool {
+	for _, appSource := range *as {
+		if appSource.File(appConfig) {
+			return true
+		}
+	}
 
-func init() {
-	RootCmd.AddCommand(versionCmd)
+	return false
 }

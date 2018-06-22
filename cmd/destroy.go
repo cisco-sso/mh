@@ -15,6 +15,8 @@
 package cmd
 
 import (
+	lib "github.com/cisco-sso/mh/mhlib"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -26,13 +28,31 @@ var destroyCmd = &cobra.Command{
 	Long: `Destroy one or more mh apps. If you do not specify one or more
 apps, mh acts on all apps in your mh config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		lateInit("destroy")
+		logger := logrus.New().WithField("command", "destroy")
+		if viper.GetBool("json") {
+			logger.Logger.Formatter = new(logrus.JSONFormatter)
+		}
+		mhConfigFile := unmarshalConfig(logger)
 
-		apps := getApps(args)
+		// Merge configuration from file, environment and CLI into default
+		// configuration
+		effectiveMHConfig, err := lib.MergeMHConfigs(lib.DefaultMHConfig, mhConfigFile.MH)
+		if err != nil {
+			logger.WithField("error", err).Fatal("Failed to build effective MH configuration")
+		}
 
-		purge := getPurge()
+		// Ensure TargetContext is the current kubectl context
+		ensureCurrentContext(logger, *effectiveMHConfig)
 
-		apps.Destroy(purge)
+		// Get effective apps
+		apps, err := mhConfigFile.EffectiveApps(logger, viper.ConfigFileUsed(), args, *effectiveMHConfig)
+		if err != nil {
+			logger.WithField("error", err).Fatal("Failed to build effective apps")
+		}
+
+		if err := apps.Destroy(); err != nil {
+			logger.Fatal("Failed running destroy")
+		}
 	},
 }
 

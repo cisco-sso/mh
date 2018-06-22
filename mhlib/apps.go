@@ -14,39 +14,64 @@
 
 package mhlib
 
-type Apps struct {
-	Apps []App
+import (
+	"github.com/sirupsen/logrus"
+)
+
+// Apps is an array of apps.
+type Apps []App
+
+// Apply runs Apply on each App
+func (a Apps) Apply(configFile string) error {
+	for _, app := range a {
+		cmd, err := app.Apply(configFile)
+		if err != nil {
+			app.log.WithFields(logrus.Fields{
+				"app":   app.Name,
+				"cmd":   cmd,
+				"error": err,
+			}).Fatal("Failed running apply")
+
+			return err
+		}
+
+	}
+
+	return nil
 }
 
-func (a *Apps) Apply(configFile string, appSources []AppSource, printRendered bool) {
-	for _, app := range a.Apps {
-		app.Apply(configFile, appSources, printRendered)
+// Destroy runs Destroy on each App
+func (a Apps) Destroy() error {
+	for _, app := range a {
+		cmd, err := app.Destroy(false)
+		if err != nil {
+			app.log.WithFields(logrus.Fields{
+				"app":   app.Name,
+				"cmd":   cmd,
+				"error": err,
+			}).Fatal("Failed running destroy")
+
+			return err
+		}
 	}
+
+	return nil
 }
 
-func (a *Apps) Destroy(purge bool) {
-	for _, app := range a.Apps {
-		app.Destroy(purge)
-	}
-}
+// Simulate runs Simulate on each App
+func (a Apps) Simulate(configFile string) error {
+	for _, app := range a {
+		cmd, err := app.Simulate(configFile)
+		if err != nil {
+			app.log.WithFields(logrus.Fields{
+				"app":   app.Name,
+				"cmd":   cmd,
+				"error": err,
+			}).Fatal("Failed running simulate")
 
-func (a *Apps) Id() []string {
-	var ids []string
-	for _, app := range a.Apps {
-		id := app.Id()
-		ids = append(ids, id)
+			return err
+		}
 	}
-	return ids
-}
 
-func (a *Apps) Simulate(configFile string, appSources []AppSource, printRendered bool) {
-	for _, app := range a.Apps {
-		app.Simulate(configFile, appSources, printRendered)
-	}
-}
-
-func (a *Apps) Status() {
-	for _, app := range a.Apps {
-		app.Status()
-	}
+	return nil
 }

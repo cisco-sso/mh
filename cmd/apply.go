@@ -15,6 +15,8 @@
 package cmd
 
 import (
+	lib "github.com/cisco-sso/mh/mhlib"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -26,15 +28,36 @@ var applyCmd = &cobra.Command{
 	Long: `Apply one or more mh apps. If you do not specify one or more
 apps, mh acts on all apps in your mh config.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		lateInit("apply")
+		logger := logrus.New().WithField("command", "apply")
+		if viper.GetBool("json") {
+			logger.Logger.Formatter = new(logrus.JSONFormatter)
+		}
+		mhConfigFile := unmarshalConfig(logger)
 
-		apps := getApps(args)
+		// Build additional configuration from environment and CLI
+		envCLIConfig := lib.MHConfig{
+			PrintRendered: viper.GetBool("printRendered"),
+		}
 
-		configFile := getConfigFile()
-		appSources := getAppSources()
-		printRendered := getPrintRendered()
+		// Merge configuration from file, environment and CLI into default
+		// configuration
+		effectiveMHConfig, err := lib.MergeMHConfigs(lib.DefaultMHConfig, mhConfigFile.MH, envCLIConfig)
+		if err != nil {
+			logger.WithField("error", err).Fatal("Failed to build effective MH configuration")
+		}
 
-		apps.Apply(configFile, appSources, printRendered)
+		// Ensure TargetContext is the current kubectl context
+		ensureCurrentContext(logger, *effectiveMHConfig)
+
+		// Get effective apps
+		apps, err := mhConfigFile.EffectiveApps(logger, viper.ConfigFileUsed(), args, *effectiveMHConfig)
+		if err != nil {
+			logger.WithField("error", err).Fatal("Failed to build effective apps")
+		}
+
+		if err := apps.Apply(viper.ConfigFileUsed()); err != nil {
+			logger.Fatal("Failed running apply")
+		}
 	},
 }
 

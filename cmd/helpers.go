@@ -15,136 +15,42 @@
 package cmd
 
 import (
-	"fmt"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/codeskyblue/go-sh"
 	"github.com/spf13/viper"
 
 	lib "github.com/cisco-sso/mh/mhlib"
-	log "github.com/sirupsen/logrus"
 )
 
-func getApps(args []string) *lib.Apps {
-	var (
-		apps       []lib.App
-		configApps []lib.App
-		foundApp   bool
-	)
-	configApps = getConfigApps()
-	if len(args) > 0 {
-		for _, arg := range args {
-			foundApp = false
-			for _, configApp := range configApps {
-				if arg == configApp.Alias || arg == configApp.Name {
-					apps = append(apps, configApp)
-					foundApp = true
-					break
-				}
-			}
-			if foundApp == false {
-				log.WithFields(log.Fields{
-					"apps":       apps,
-					"arg":        arg,
-					"configApps": configApps,
-					"foundApp":   foundApp,
-				}).Fatal("Command line app name/alias not found in config.")
-			}
-		}
-	} else {
-		apps = configApps
-	}
-	return &lib.Apps{
-		Apps: apps,
-	}
-}
-
-func getAppSources() []lib.AppSource {
-	var appSources []lib.AppSource
-	err := viper.UnmarshalKey("appSources", &appSources)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Fatal("Failed to unmarshal 'appSources'")
-	}
-	return appSources
-}
-
-func getConfigApps() []lib.App {
-	var apps []lib.App
-	err := viper.UnmarshalKey("apps", &apps)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err": err,
-		}).Fatal("Failed to unmarshal 'apps:' from config.")
-	}
-	return apps
-}
-
-func getConfigFile() string {
-	return viper.ConfigFileUsed()
-}
-
-func getCurrentContext() string {
+// ensureCurrentContext compares the current kubectl context with the targent
+// context and exits if they do not match.
+func ensureCurrentContext(logger *logrus.Entry, config lib.MHConfig) {
+	// Fetch current context
 	out, err := sh.Command("kubectl", "config", "current-context").Output()
 	if err != nil {
-		log.Fatal("Failed running `kubectl config current-context`.")
+		logger.WithField("error", err).Fatal("Failed running `kubectl config current-context`.")
 	}
 	currentContext := strings.TrimSuffix(string(out), "\n")
-	return currentContext
-}
 
-func getPurge() bool {
-	return viper.GetBool("purge")
-}
-
-func getPrintRendered() bool {
-	return viper.GetBool("printRendered")
-}
-
-func getTargetContext() string {
-	return viper.GetString("targetContext")
-}
-
-func lateInit(cmd string) {
-	configFile := getConfigFile()
-	currentContext := getCurrentContext()
-	targetContext := getTargetContext()
-
-	if targetContext != currentContext {
-		log.WithFields(log.Fields{
-			"configFile":     configFile,
+	// Compare contexts
+	if config.TargetContext != currentContext {
+		logger.WithFields(logrus.Fields{
 			"currentContext": currentContext,
-			"targetContext":  targetContext,
-		}).Fatal("`kubectl config current-context` does not match config's `targetContext`.")
+			"targetContext":  config.TargetContext,
+		}).Fatal("`kubectl config current-context` does not match configured targetContext")
 	}
-
-	log.WithFields(log.Fields{
-		"appSources":     getAppSources(),
-		"cmd":            cmd,
-		"configFile":     configFile,
-		"currentContext": currentContext,
-		"targetContext":  targetContext,
-		"versionNumber":  versionNumber,
-	}).Info("Initializing mh.")
 }
 
-func logVersion() {
-	log.Info("mh " + versionNumber)
-}
+// unmarshalConfig creates a MHConfigFile struct from MH_CONFIG
+func unmarshalConfig(logger *logrus.Entry) lib.MHConfigFile {
+	mhConfigFile := lib.MHConfigFile{}
+	if err := viper.Unmarshal(&mhConfigFile); err != nil {
+		logger.WithField("error", err).Fatal("Failed to unmarshal mh configuration file")
+	}
+	logger = logger.WithField("configFile", viper.ConfigFileUsed())
 
-func printLicense() {
-	fmt.Println(`Copyright © 2018 Cisco Systems, Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.`)
+	return mhConfigFile
 }
