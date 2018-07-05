@@ -63,7 +63,7 @@ func NewAppSource(config AppSourceConfig, configFile string) (*AppSource, error)
 	if config.Kind == "path" {
 		pattern = config.Source + "/*.y*ml"
 	} else if config.Kind == "configPath" {
-		pattern = path.Dir(configFile) + config.Source + "/*.y*ml"
+		pattern = path.Dir(configFile) + "/" + config.Source + "/*.y*ml"
 	}
 
 	// Get all files the glob pattern matches
