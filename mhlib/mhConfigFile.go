@@ -45,6 +45,10 @@ func (c *MHConfigFile) EffectiveApps(logger *logrus.Entry, configFile string, fi
 			return nil, err
 		}
 
+		if len(appSource.Files) == 0 {
+			logger.WithField("appSource", appSource.Name).Warn("AppSource matches no files")
+		}
+
 		effectiveAppSources = append(effectiveAppSources, *appSource)
 	}
 
