@@ -42,7 +42,7 @@ var DefaultMHConfig = MHConfig{
 	PrintRendered: false,
 	Simulate:      false,
 	TargetContext: "localhost",
-	Team:          "sopd-sre",
+	Team:          "sre",
 }
 
 // MergeMHConfigs merges an arbitrary number of MHConfigs with rising priority.
