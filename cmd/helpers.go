@@ -50,6 +50,13 @@ func unmarshalConfig(logger *logrus.Entry) lib.MHConfigFile {
 	if err := viper.Unmarshal(&mhConfigFile); err != nil {
 		logger.WithField("error", err).Fatal("Failed to unmarshal mh configuration file")
 	}
+
+	// Check top-level targetContext for backwards compatibility
+	if mhConfigFile.TargetContext != "" {
+		logger.Warn("Top-level configuration is deprecated, move to the 'mh' key")
+		mhConfigFile.MH.TargetContext = mhConfigFile.TargetContext
+	}
+
 	logger = logger.WithField("configFile", viper.ConfigFileUsed())
 
 	return mhConfigFile

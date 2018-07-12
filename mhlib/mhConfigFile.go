@@ -22,9 +22,11 @@ import (
 
 // MHConfigFile is the structure of a mh configuration file.
 type MHConfigFile struct {
-	MH         MHConfig         `yaml:"mh"`
-	Apps       AppConfigs       `yaml:"apps"`
-	AppSources AppSourceConfigs `yaml:"appSources"`
+	// TargetContext for backwards compatibility
+	TargetContext string           `yaml:"targetContext"`
+	MH            MHConfig         `yaml:"mh"`
+	Apps          AppConfigs       `yaml:"apps"`
+	AppSources    AppSourceConfigs `yaml:"appSources"`
 }
 
 // EffectiveApps returns all Apps that are configured in a MHConfigFile,
