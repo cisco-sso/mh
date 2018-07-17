@@ -241,7 +241,8 @@
     "pkg/ignore",
     "pkg/proto/hapi/chart",
     "pkg/proto/hapi/version",
-    "pkg/version"
+    "pkg/version",
+    "pkg/strvals"
   ]
   revision = "4aef7fddc8335e0b7b00d9168c04955d903fdbee"
   version = "v2.7.1"

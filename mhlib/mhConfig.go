@@ -27,6 +27,7 @@ type MHConfig struct {
 	Simulate      bool     `yaml:"simulate"`
 	TargetContext string   `yaml:"targetContext"`
 	Team          string   `yaml:"team"`
+	CLIValues     []string `yaml:"cliValues"`
 }
 
 // DefaultMHConfig is the default mh config and will most likely be modified
@@ -43,6 +44,7 @@ var DefaultMHConfig = MHConfig{
 	Simulate:      false,
 	TargetContext: "localhost",
 	Team:          "sre",
+	CLIValues:     []string{""},
 }
 
 // MergeMHConfigs merges an arbitrary number of MHConfigs with rising priority.
