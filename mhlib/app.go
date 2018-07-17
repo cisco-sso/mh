@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/imdario/mergo"
 	"github.com/sirupsen/logrus"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/engine"
 	"k8s.io/helm/pkg/proto/hapi/chart"
+	"k8s.io/helm/pkg/strvals"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -227,6 +229,9 @@ func (a *App) render(configFile string) (*string, *string, *[]byte, error) {
 			{Name: "templates/main", Data: data},
 		},
 	}
+
+	// Add config via --set command
+	strvals.ParseIntoString(strings.Join(a.MHConfig.CLIValues, ","), config)
 
 	out, err := engine.New().Render(fakeChart, config)
 	if err != nil {

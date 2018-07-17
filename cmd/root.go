@@ -26,6 +26,7 @@ import (
 var (
 	configFileFlag string
 	versionNumber  string
+	setValuesFlag  []string
 )
 
 // RootCmd represents the base command when called without any subcommands
@@ -59,13 +60,15 @@ func Execute() {
 }
 
 func init() {
-	versionNumber = "v0.6.0"
+	versionNumber = "v0.7.0"
 
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVarP(&configFileFlag, "config", "c", "",
 		`config file (you can instead set MH_CONFIG)`)
 	RootCmd.PersistentFlags().BoolP("json", "j", false, "set logging to JSON format")
+	RootCmd.PersistentFlags().StringSliceVar(&setValuesFlag, "set", nil,
+		`set mh values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)`)
 
 	// Beware that init() happens too early to read values from Viper...
 	// See: https://github.com/spf13/cobra/issues/511
