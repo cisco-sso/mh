@@ -34,7 +34,6 @@ Flags:
   -c, --config string     config file (you can instead set MH_CONFIG)
   -h, --help              help for mh
   -j, --json              set logging to JSON format
-      --set               set mh values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)
 
 Use "mh [command] --help" for more information about a command.
 ```
@@ -110,6 +109,10 @@ mh simulate --printRendered
 mh simulate wordpress
 # ^ simulate install/upgrade just these app(s),
 #   even if they are not in `main.yaml`
+
+mh simulate --set "wordpress.image.tag=1.0.0"
+# ^ simulate by setting mh values on the command line
+#   (can specify multiple or separate values with commas: key1=val1,key2=val2)
 ```
 
 ### Apply app upgrades (or install apps, as needed).
@@ -127,6 +130,10 @@ mh apply --printRendered
 mh apply wordpress
 # ^ apply install/upgrade just these app(s),
 #   even if they are not in `main.yaml`
+
+mh apply --set "wordpress.image.tag=1.0.0"
+# ^ apply by setting mh values on the command line
+#   (can specify multiple or separate values with commas: key1=val1,key2=val2)
 ```
 
 ### Destroy apps (if they are known to Helm).

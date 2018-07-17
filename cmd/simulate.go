@@ -70,7 +70,10 @@ apps, mh acts on all apps in your mh config.`,
 
 func init() {
 	RootCmd.AddCommand(simulateCmd)
+	var setValuesFlag []string
 
 	simulateCmd.PersistentFlags().BoolP("printRendered", "p", false, "print rendered override values")
+	simulateCmd.PersistentFlags().StringSliceVar(&setValuesFlag, "set", nil,
+		`set mh values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)`)
 	viper.BindPFlags(simulateCmd.PersistentFlags())
 }
