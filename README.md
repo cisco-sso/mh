@@ -34,6 +34,7 @@ Flags:
   -c, --config string     config file (you can instead set MH_CONFIG)
   -h, --help              help for mh
   -j, --json              set logging to JSON format
+      --set               set mh values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)
 
 Use "mh [command] --help" for more information about a command.
 ```
