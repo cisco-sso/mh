@@ -19,7 +19,6 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
-	"strings"
 
 	"github.com/imdario/mergo"
 	"github.com/sirupsen/logrus"
@@ -231,7 +230,9 @@ func (a *App) render(configFile string) (*string, *string, *[]byte, error) {
 	}
 
 	// Add config via --set command
-	strvals.ParseIntoString(strings.Join(a.MHConfig.CLIValues, ","), config)
+	for _, value := range a.MHConfig.CLIValues {
+		strvals.ParseInto(value, config)
+	}
 
 	out, err := engine.New().Render(fakeChart, config)
 	if err != nil {
