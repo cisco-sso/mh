@@ -37,13 +37,7 @@ apps, mh acts on all apps in your mh config.`,
 		// Build additional configuration from environment and CLI
 		envCLIConfig := lib.MHConfig{
 			PrintRendered: viper.GetBool("printRendered"),
-		}
-
-		// Add values passed via CLI using --set
-		if viper.GetStringSlice("set") != nil {
-			envCLIConfig = lib.MHConfig{
-				CLIValues: viper.GetStringSlice("set"),
-			}
+			SETValues:     viper.GetStringSlice("set"),
 		}
 
 		// Merge configuration from file, environment and CLI into default
