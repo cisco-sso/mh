@@ -230,8 +230,11 @@ func (a *App) render(configFile string) (*string, *string, *[]byte, error) {
 	}
 
 	// Add config via --set command
-	for _, value := range a.MHConfig.CLIValues {
-		strvals.ParseInto(value, config)
+	for _, value := range a.MHConfig.SETValues {
+		err := strvals.ParseInto(value, config)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("Failed to parse values provided via --set : %v", err)
+		}
 	}
 
 	out, err := engine.New().Render(fakeChart, config)
