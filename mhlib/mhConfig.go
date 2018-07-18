@@ -27,7 +27,7 @@ type MHConfig struct {
 	Simulate      bool     `yaml:"simulate"`
 	TargetContext string   `yaml:"targetContext"`
 	Team          string   `yaml:"team"`
-	SETValues     []string `yaml:"setValues"`
+	SETValues     []string
 }
 
 // DefaultMHConfig is the default mh config and will most likely be modified
