@@ -48,6 +48,12 @@ In other words: We heard you like templates, so we templated your Helm value
 overrides.`,
 }
 
+// Local common flags for sub-commands
+var (
+	setValuesFlag []string
+	printRendered bool
+)
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -59,7 +65,7 @@ func Execute() {
 }
 
 func init() {
-	versionNumber = "v0.7.0"
+	versionNumber = "v0.7.1"
 
 	cobra.OnInitialize(initConfig)
 

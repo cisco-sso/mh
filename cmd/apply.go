@@ -36,8 +36,8 @@ apps, mh acts on all apps in your mh config.`,
 
 		// Build additional configuration from environment and CLI
 		envCLIConfig := lib.MHConfig{
-			PrintRendered: viper.GetBool("printRendered"),
-			SETValues:     viper.GetStringSlice("set"),
+			PrintRendered: printRendered,
+			SETValues:     setValuesFlag,
 		}
 
 		// Merge configuration from file, environment and CLI into default
@@ -64,10 +64,8 @@ apps, mh acts on all apps in your mh config.`,
 
 func init() {
 	RootCmd.AddCommand(applyCmd)
-	var setValuesFlag []string
 
-	applyCmd.PersistentFlags().BoolP("printRendered", "p", false, "print rendered override values")
-	applyCmd.PersistentFlags().StringSliceVar(&setValuesFlag, "set", nil,
+	applyCmd.Flags().BoolVarP(&printRendered, "printRendered", "p", false, "print rendered override values")
+	applyCmd.Flags().StringSliceVar(&setValuesFlag, "set", nil,
 		`set mh values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)`)
-	viper.BindPFlags(applyCmd.PersistentFlags())
 }
