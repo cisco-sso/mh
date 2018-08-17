@@ -311,7 +311,7 @@ func selfRender(templateValuesStr string, enableGomplate bool) (string, error) {
 		// Unmarshal the file as a values dict
 		vals := Values{}
 		err := yaml.Unmarshal([]byte(templateValuesStr), &vals)
-		if err != nil { panic(err) }
+		if err != nil { return "", err }
 
 		tmpl := template.New("SelfTemplate")
 		tmpl.Delims("[[", "]]")
@@ -336,7 +336,7 @@ func selfRender(templateValuesStr string, enableGomplate bool) (string, error) {
 
 			// Access gomplate datasources and function library
 			d, err := data.NewData(dataSources, dataSourceHeaders)
-			if err != nil { panic(err) }
+			if err != nil { return "", err }
 
 			// Configure go/text/template to use gomplate
 			//   datasources and function library.
@@ -347,10 +347,10 @@ func selfRender(templateValuesStr string, enableGomplate bool) (string, error) {
 		// Run the the file through the tempating engine as both values
 		//   file and template file
 		tmpl.Parse(string(templateValuesStr))
-		if err != nil { panic(err) }
+		if err != nil { return "", err }
 		out := new(bytes.Buffer)
 		err = tmpl.Execute(out, vals)
-		if err != nil { panic(err) }
+		if err != nil { return "", err }
 
 		newRender := out.String()
 		if lastRender == newRender {
