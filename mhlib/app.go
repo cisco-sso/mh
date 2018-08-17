@@ -317,22 +317,14 @@ func selfRender(templateValuesStr string, enableGomplate bool) (string, error) {
 		tmpl.Delims("[[", "]]")
 
 		if enableGomplate {
-			// Read the defined datasources and datasourcehaders
-			//   from the values dict
-			dataSources := []string{}
-			dataSourceHeaders := []string{}
-			if _, ok := vals["gomplate"]; ok {
-				tmp := vals["gomplate"].(map[string]interface{})
-				if _, ok := tmp["datasources"]; ok {
-					dataSources = convertInterfaceListToStringList(
-						tmp["datasources"].([]interface{}))
-				}
-				if _, ok := tmp["datasources"]; ok {
-					dataSourceHeaders = convertInterfaceListToStringList(
-						tmp["datasourceheaders"].([]interface{}))
-				}
-
-			}
+			// Read the defined gomplate datasources and
+			//   datasourcehaders from the values dict
+			var dataSources []string
+			var dataSourceHeaders []string
+			var gompData gomplate.Config
+			yaml.Unmarshal([]byte(templateValuesStr), &gompData)
+			dataSources = gompData.DataSources
+			dataSourceHeaders = gompData.DataSourceHeaders
 
 			// Access gomplate datasources and function library
 			d, err := data.NewData(dataSources, dataSourceHeaders)
@@ -362,12 +354,4 @@ func selfRender(templateValuesStr string, enableGomplate bool) (string, error) {
 	}
 
 	return templateValuesStr, errors.New("Self-templating failed")
-}
-
-func convertInterfaceListToStringList(l []interface{}) ([]string) {
-	s := make([]string, len(l))
-	for i, v := range l {
-		s[i] = fmt.Sprint(v)
-	}
-	return s
 }
