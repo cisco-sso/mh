@@ -15,15 +15,21 @@
 package mhlib
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
+	"text/template"
 
 	"github.com/imdario/mergo"
 	"github.com/sirupsen/logrus"
 
 	"github.com/codeskyblue/go-sh"
+	"github.com/ghodss/yaml"
+	"github.com/hairyhenderson/gomplate"
+	"github.com/hairyhenderson/gomplate/data"
 	"github.com/smallfish/simpleyaml"
 	"github.com/stoewer/go-strcase"
 	"k8s.io/helm/pkg/chartutil"
@@ -203,22 +209,40 @@ func (a *App) Simulate(configFile string) (*[]interface{}, error) {
 func (a *App) render(configFile string) (*string, *string, *[]byte, error) {
 	var chartVersion string
 
-	config, err := chartutil.ReadValuesFile(configFile)
+	// read the mh main.yaml
+	data, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("Failed to read configFile %v: %v", configFile, err)
+	}
+
+	// Self-render the main.yaml with gomplate functions and datasources
+	//   This does not apply to the app.yaml files.
+	contents := string(data)
+	renderedContents, err := selfRender(contents, true)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("Failed to selfRender configFile %v: %v", configFile, err)
+	}
+
+	config, err := chartutil.ReadValues([]byte(renderedContents))
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("Failed to load values from configFile: %v", err)
 	}
 
-	appData, err := ioutil.ReadFile(*a.File.Path)
+	appData, err := ioutil.ReadFile(*a.File.Path) // app.yaml
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("Failed to load data from appFile: %v", err)
 	}
 
-	data := []byte(
+	// creating a literal
+	data = []byte(
 		"{{- $name := \"" + a.ID + "\" }}\n" + "{{- $app := " + a.Key + " }}\n",
 	)
 
+	// combining literal with app.yaml
 	data = append(data, appData...)
 
+
+	// Fakechart to send to helm rendering engine
 	fakeChart := &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    "fake",
@@ -268,4 +292,82 @@ func (a *App) render(configFile string) (*string, *string, *[]byte, error) {
 	}
 
 	return &chart, &chartVersion, &overrides, nil
+}
+
+
+func selfRender(templateValuesStr string, enableGomplate bool) (string, error) {
+	/*
+	This function will accept an input string and run it through the
+	  templating engine as both the values dictionary as well as the
+	  template string.  It will repeat the process until the templating
+	  result stops changing.
+	*/
+
+	type Values map[string]interface{}
+
+	lastRender := templateValuesStr
+	for i := 0; i < 10; i++ {
+
+		// Unmarshal the file as a values dict
+		vals := Values{}
+		err := yaml.Unmarshal([]byte(templateValuesStr), &vals)
+		if err != nil { panic(err) }
+
+		tmpl := template.New("SelfTemplate")
+		tmpl.Delims("[[", "]]")
+
+		if enableGomplate {
+			// Read the defined datasources and datasourcehaders
+			//   from the values dict
+			dataSources := []string{}
+			dataSourceHeaders := []string{}
+			if _, ok := vals["gomplate"]; ok {
+				tmp := vals["gomplate"].(map[string]interface{})
+				if _, ok := tmp["datasources"]; ok {
+					dataSources = convertInterfaceListToStringList(
+						tmp["datasources"].([]interface{}))
+				}
+				if _, ok := tmp["datasources"]; ok {
+					dataSourceHeaders = convertInterfaceListToStringList(
+						tmp["datasourceheaders"].([]interface{}))
+				}
+
+			}
+
+			// Access gomplate datasources and function library
+			d, err := data.NewData(dataSources, dataSourceHeaders)
+			if err != nil { panic(err) }
+
+			// Configure go/text/template to use gomplate
+			//   datasources and function library.
+			tmpl.Option("missingkey=error")
+			tmpl.Funcs(gomplate.Funcs(d))
+		}
+
+		// Run the the file through the tempating engine as both values
+		//   file and template file
+		tmpl.Parse(string(templateValuesStr))
+		if err != nil { panic(err) }
+		out := new(bytes.Buffer)
+		err = tmpl.Execute(out, vals)
+		if err != nil { panic(err) }
+
+		newRender := out.String()
+		if lastRender == newRender {
+			return newRender, nil // self-templating succeeded
+		} else {
+			lastRender = newRender
+			templateValuesStr = newRender
+		}
+	}
+
+	return templateValuesStr, errors.New("Self-templating failed")
+}
+
+func convertInterfaceListToStringList(l []interface{}) ([]string) {
+	s := make([]string, len(l))
+	for i, v := range l {
+		s[i] = fmt.Sprint(v)
+	}
+	return s
 }
