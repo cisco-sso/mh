@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 	"text/template"
 
 	"github.com/imdario/mergo"
@@ -218,7 +219,7 @@ func (a *App) render(configFile string) (*string, *string, *[]byte, error) {
 	// Self-render the main.yaml with gomplate functions and datasources
 	//   This does not apply to the app.yaml files.
 	contents := string(data)
-	renderedContents, err := selfRender(contents, true)
+	renderedContents, err := selfRender(contents)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("Failed to selfRender configFile %v: %v", configFile, err)
 	}
@@ -240,7 +241,6 @@ func (a *App) render(configFile string) (*string, *string, *[]byte, error) {
 
 	// combining literal with app.yaml
 	data = append(data, appData...)
-
 
 	// Fakechart to send to helm rendering engine
 	fakeChart := &chart.Chart{
@@ -294,64 +294,70 @@ func (a *App) render(configFile string) (*string, *string, *[]byte, error) {
 	return &chart, &chartVersion, &overrides, nil
 }
 
-
-func selfRender(templateValuesStr string, enableGomplate bool) (string, error) {
+func selfRender(templateValuesStr string) (string, error) {
 	/*
-	This function will accept an input string and run it through the
-	  templating engine as both the values dictionary as well as the
-	  template string.  It will repeat the process until the templating
-	  result stops changing.
+		This function will accept an input string and run it through the
+		  templating engine as both the values dictionary as well as the
+		  template string.  It will repeat the process until the templating
+		  result stops changing.
 	*/
 
-	type Values map[string]interface{}
+	type gomplateConfig struct {
+		Gomplate gomplate.Config `yaml:"gomplate,omitempty"`
+	}
+	var gomp gomplateConfig
+	err := yaml.Unmarshal([]byte(templateValuesStr), &gomp)
+	if err != nil {
+		return "", err
+	}
+
+	funcs := template.FuncMap{
+		//Add case insensitive handling as marshalled inline structures are public by default, but may be lowercase templates
+		"MyEq": strings.EqualFold,
+	}
+	if len(gomp.Gomplate.DataSources) > 0 {
+		d, err := data.NewData(gomp.Gomplate.DataSources, gomp.Gomplate.DataSourceHeaders)
+		if err != nil {
+			return "", err
+		}
+		for k, v := range gomplate.Funcs(d) {
+			funcs[k] = v
+		}
+	}
+	tmpl := template.New("SelfTemplate").
+		Delims("[[", "]]").
+		Option("missingkey=error").
+		Funcs(funcs)
 
 	lastRender := templateValuesStr
 	for i := 0; i < 10; i++ {
 
 		// Unmarshal the file as a values dict
-		vals := Values{}
-		err := yaml.Unmarshal([]byte(templateValuesStr), &vals)
-		if err != nil { return "", err }
-
-		tmpl := template.New("SelfTemplate")
-		tmpl.Delims("[[", "]]")
-
-		if enableGomplate {
-			// Read the defined gomplate datasources and
-			//   datasourcehaders from the values dict
-			var dataSources []string
-			var dataSourceHeaders []string
-			var gompData gomplate.Config
-			yaml.Unmarshal([]byte(templateValuesStr), &gompData)
-			dataSources = gompData.DataSources
-			dataSourceHeaders = gompData.DataSourceHeaders
-
-			// Access gomplate datasources and function library
-			d, err := data.NewData(dataSources, dataSourceHeaders)
-			if err != nil { return "", err }
-
-			// Configure go/text/template to use gomplate
-			//   datasources and function library.
-			tmpl.Option("missingkey=error")
-			tmpl.Funcs(gomplate.Funcs(d))
+		vals := map[string]interface{}{}
+		err := yaml.Unmarshal([]byte(lastRender), &vals)
+		if err != nil {
+			return "", err
 		}
 
 		// Run the the file through the tempating engine as both values
 		//   file and template file
-		tmpl.Parse(string(templateValuesStr))
-		if err != nil { return "", err }
+		tmpl.Parse(string(lastRender))
+		if err != nil {
+			return "", err
+		}
 		out := new(bytes.Buffer)
 		err = tmpl.Execute(out, vals)
-		if err != nil { return "", err }
+		if err != nil {
+			return "", err
+		}
 
 		newRender := out.String()
 		if lastRender == newRender {
 			return newRender, nil // self-templating succeeded
 		} else {
 			lastRender = newRender
-			templateValuesStr = newRender
 		}
 	}
 
-	return templateValuesStr, errors.New("Self-templating failed")
+	return lastRender, errors.New("Self-templating failed")
 }
