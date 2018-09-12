@@ -65,7 +65,7 @@ func Execute() {
 }
 
 func init() {
-	versionNumber = "v0.7.1"
+	versionNumber = "v0.8.0"
 
 	cobra.OnInitialize(initConfig)
 

@@ -47,10 +47,11 @@ import (
 //
 // Maybe: Get rid of Alias in favor of ID
 type AppConfig struct {
-	Alias string   `yaml:"alias"`
-	File  *AppFile `yaml:"file"`
-	Key   string   `yaml:"key"`
-	Name  string   `yaml:"name"`
+	Alias     string   `yaml:"alias"`
+	File      *AppFile `yaml:"file"`
+	Key       string   `yaml:"key"`
+	Name      string   `yaml:"name"`
+	Namespace string   `yaml:"namespace"`
 	MHConfig
 }
 
@@ -90,6 +91,11 @@ func NewApp(logger *logrus.Entry, appConfig AppConfig, mhConfig MHConfig) (*App,
 	// Set App Key to default of ".ID" if not defined
 	if appConfig.Key == "" {
 		appConfig.Key = fmt.Sprintf(".%s", strcase.LowerCamelCase(id))
+	}
+
+	// Set ".Namespace" to "default" if not defined
+	if appConfig.Namespace == "" {
+		appConfig.Namespace = "default"
 	}
 
 	return &App{
@@ -190,6 +196,9 @@ func (a *App) apply(configFile string, simulate bool) (*[]interface{}, error) {
 
 	// "performs pods restart for the resource if applicable"
 	cmd = append(cmd, []interface{}{"--recreate-pods"}...)
+
+	// "namespace to install the release into. (Default: 'default')"
+	cmd = append(cmd, []interface{}{"--namespace", a.Namespace}...)
 
 	// Make `helm upgrade` read overrides from stdin
 	cmd = append(cmd, []interface{}{"--values", "-"}...)
