@@ -132,7 +132,7 @@ func (a *App) Destroy(purge bool) (*[]interface{}, error) {
 	a.log.Info("Destroying app")
 	cmd := []interface{}{"delete", a.ID}
 	if purge {
-		cmd = append(cmd, []interface{}{"--purge"}...)
+		cmd = append(cmd, "--purge")
 	}
 	err := sh.Command("helm", cmd...).Run()
 	if err != nil {
@@ -143,8 +143,7 @@ func (a *App) Destroy(purge bool) (*[]interface{}, error) {
 }
 
 func (a *App) Status() error {
-	cmd := []interface{}{"status", a.ID}
-	err := sh.Command("helm", cmd...).Run()
+	err := sh.Command("helm", "status", a.ID).Run()
 	if err != nil {
 		return fmt.Errorf("Helm status failed")
 	}
@@ -172,33 +171,33 @@ func (a *App) apply(configFile string, simulate bool) (*[]interface{}, error) {
 
 	// "specify the exact chart version to install. If this is not specified, the latest version is installed"
 	if chartVersion != nil {
-		cmd = append(cmd, []interface{}{"--version", *chartVersion}...)
+		cmd = append(cmd, "--version", *chartVersion)
 	}
 
 	if simulate {
 		// "enable verbose output"
-		cmd = append(cmd, []interface{}{"--debug"}...)
+		cmd = append(cmd, "--debug")
 
 		// "simulate an upgrade"
-		cmd = append(cmd, []interface{}{"--dry-run"}...)
+		cmd = append(cmd, "--dry-run")
 	}
 
 	// "force resource update through delete/recreate if needed"
-	cmd = append(cmd, []interface{}{"--force"}...)
+	cmd = append(cmd, "--force")
 
 	// "if a release by this name doesn't already exist, run an install"
-	cmd = append(cmd, []interface{}{"--install"}...)
+	cmd = append(cmd, "--install")
 
 	// "performs pods restart for the resource if applicable"
-	cmd = append(cmd, []interface{}{"--recreate-pods"}...)
+	cmd = append(cmd, "--recreate-pods")
 
 	// "namespace to install the release into. (Defaults to helm default behaviour => kubeconfig checked out ns)"
 	if a.Namespace != "" {
-		cmd = append(cmd, []interface{}{"--namespace", a.Namespace}...)
+		cmd = append(cmd, "--namespace", a.Namespace)
 	}
 
 	// Make `helm upgrade` read overrides from stdin
-	cmd = append(cmd, []interface{}{"--values", "-"}...)
+	cmd = append(cmd, "--values", "-")
 
 	// Run `helm upgrade
 	err = sh.Command("helm", cmd...).SetInput(string(*overrides)).Run()
