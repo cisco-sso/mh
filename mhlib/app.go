@@ -93,11 +93,6 @@ func NewApp(logger *logrus.Entry, appConfig AppConfig, mhConfig MHConfig) (*App,
 		appConfig.Key = fmt.Sprintf(".%s", strcase.LowerCamelCase(id))
 	}
 
-	// Set ".Namespace" to "default" if not defined
-	if appConfig.Namespace == "" {
-		appConfig.Namespace = "default"
-	}
-
 	return &App{
 		appConfig,
 		id,
@@ -197,8 +192,10 @@ func (a *App) apply(configFile string, simulate bool) (*[]interface{}, error) {
 	// "performs pods restart for the resource if applicable"
 	cmd = append(cmd, []interface{}{"--recreate-pods"}...)
 
-	// "namespace to install the release into. (Default: 'default')"
-	cmd = append(cmd, []interface{}{"--namespace", a.Namespace}...)
+	// "namespace to install the release into. (Defaults to helm default behaviour => kubeconfig checked out ns)"
+	if a.Namespace != "" {
+		cmd = append(cmd, []interface{}{"--namespace", a.Namespace}...)
+	}
 
 	// Make `helm upgrade` read overrides from stdin
 	cmd = append(cmd, []interface{}{"--values", "-"}...)
