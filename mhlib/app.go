@@ -188,8 +188,10 @@ func (a *App) apply(configFile string, simulate bool) (*[]interface{}, error) {
 	// "if a release by this name doesn't already exist, run an install"
 	cmd = append(cmd, "--install")
 
-	// "performs pods restart for the resource if applicable"
-	cmd = append(cmd, "--recreate-pods")
+	if !a.NoRecreatePods {
+		// "performs pods restart for the resource if applicable"
+		cmd = append(cmd, "--recreate-pods")
+	}
 
 	// "namespace to install the release into. (Defaults to helm default behaviour => kubeconfig checked out ns)"
 	if a.Namespace != "" {
