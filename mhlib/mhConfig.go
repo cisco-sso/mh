@@ -22,12 +22,13 @@ import (
 
 // MHConfig is a set of options used during app deployment.
 type MHConfig struct {
-	Maintainers   []string `yaml:"maintainers"`
-	PrintRendered bool     `yaml:"printRendered"`
-	Simulate      bool     `yaml:"simulate"`
-	TargetContext string   `yaml:"targetContext"`
-	Team          string   `yaml:"team"`
-	SETValues     []string
+	Maintainers    []string `yaml:"maintainers"`
+	PrintRendered  bool     `yaml:"printRendered"`
+	NoRecreatePods bool     `yaml:"noRecreatePods"`
+	Simulate       bool     `yaml:"simulate"`
+	TargetContext  string   `yaml:"targetContext"`
+	Team           string   `yaml:"team"`
+	SETValues      []string
 }
 
 // DefaultMHConfig is the default mh config and will most likely be modified
@@ -39,12 +40,13 @@ type MHConfig struct {
 // 4. Command line flags
 // 5. app-specific overrides in MH_CONFIG.
 var DefaultMHConfig = MHConfig{
-	Maintainers:   []string{"none"},
-	PrintRendered: false,
-	Simulate:      false,
-	TargetContext: "localhost",
-	Team:          "sre",
-	SETValues:     []string{""},
+	Maintainers:    []string{"none"},
+	PrintRendered:  false,
+	NoRecreatePods: false,
+	Simulate:       false,
+	TargetContext:  "localhost",
+	Team:           "sre",
+	SETValues:      []string{""},
 }
 
 // MergeMHConfigs merges an arbitrary number of MHConfigs with rising priority.

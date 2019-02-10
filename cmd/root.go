@@ -50,8 +50,9 @@ overrides.`,
 
 // Local common flags for sub-commands
 var (
-	setValuesFlag []string
-	printRendered bool
+	setValuesFlag  []string
+	printRendered  bool
+	noRecreatePods bool
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -65,7 +66,7 @@ func Execute() {
 }
 
 func init() {
-	versionNumber = "v0.8.0"
+	versionNumber = "v0.9.0"
 
 	cobra.OnInitialize(initConfig)
 
