@@ -221,15 +221,22 @@ func (a *App) render(configFile string) (*string, *string, *[]byte, error) {
 		return nil, nil, nil, fmt.Errorf("Failed to read configFile %v: %v", configFile, err)
 	}
 
-	// Self-render the main.yaml with gomplate functions and datasources
-	//   This does not apply to the app.yaml files.
-	contents := string(data)
-	renderedContents, err := selfRender(contents)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("Failed to selfRender configFile %v: %v", configFile, err)
-	}
+	var config chartutil.Values
 
-	config, err := chartutil.ReadValues([]byte(renderedContents))
+	// Disabling Selfrender gomplate based datasources loading in CD system
+	if a.MHConfig.DisableGomplate {
+		config, err = chartutil.ReadValuesFile(configFile)
+	} else {
+		// Self-render the main.yaml with gomplate functions and datasources
+		//   This does not apply to the app.yaml files.
+		contents := string(data)
+		renderedContents, err := selfRender(contents)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("Failed to selfRender configFile %v: %v", configFile, err)
+		}
+
+		config, err = chartutil.ReadValues([]byte(renderedContents))
+	}
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("Failed to load values from configFile: %v", err)
 	}

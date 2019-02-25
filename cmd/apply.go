@@ -36,8 +36,9 @@ apps, mh acts on all apps in your mh config.`,
 
 		// Build additional configuration from environment and CLI
 		envCLIConfig := lib.MHConfig{
-			PrintRendered: printRendered,
-			SETValues:     setValuesFlag,
+			PrintRendered:   printRendered,
+			SETValues:       setValuesFlag,
+			DisableGomplate: disableGomplate,
 		}
 
 		// Merge configuration from file, environment and CLI into default
@@ -68,4 +69,5 @@ func init() {
 	applyCmd.Flags().BoolVarP(&printRendered, "printRendered", "p", false, "print rendered override values")
 	applyCmd.Flags().StringSliceVar(&setValuesFlag, "set", nil,
 		`set mh values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)`)
+	applyCmd.Flags().BoolVarP(&disableGomplate, "disableGomplate", "g", false, "disable gomplate datasource loading (file, vault, etc.)")
 }

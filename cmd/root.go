@@ -50,8 +50,9 @@ overrides.`,
 
 // Local common flags for sub-commands
 var (
-	setValuesFlag []string
-	printRendered bool
+	setValuesFlag   []string
+	printRendered   bool
+	disableGomplate bool
 )
 
 // Execute adds all child commands to the root command and sets flags appropriately.
